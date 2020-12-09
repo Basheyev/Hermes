@@ -66,8 +66,8 @@ public class Catalogue {
     @Transactional
     public Product addProduct(Product product) {
         if (product.productID != 0) return null;
-        product.available = true;
-        product.timestamp = System.nanoTime();
+        product.setAvailable(true);
+        product.setTimestamp(System.nanoTime());
         entityManager.persist(product);
         return product;
     }
@@ -79,21 +79,26 @@ public class Catalogue {
      */
     @Transactional
     public Product updateProduct(Product product) {
-        Product existingProduct = getProduct(product.productID);
-        if (existingProduct==null) return null;
-        existingProduct.vendorCode = product.vendorCode;
-        existingProduct.name = product.name;
-        existingProduct.description = product.description;
-        existingProduct.price = product.price;
-        existingProduct.unitOfMeasure = product.unitOfMeasure;
-        existingProduct.available = product.available;
-        existingProduct.timestamp = System.nanoTime();
-        entityManager.persist(existingProduct);
-        return existingProduct;
+
+        Product managedEntity = entityManager.find(Product.class, product.productID);
+
+        managedEntity.setCategoryID(product.getCategoryID());
+        managedEntity.setVendorCode(product.getVendorCode());
+        managedEntity.setName(product.getName());
+        managedEntity.setDescription(product.getDescription());
+        managedEntity.setPrice(product.getPrice());
+        managedEntity.setUnitOfMeasure(product.getUnitOfMeasure());
+        managedEntity.setAvailable(product.isAvailable());
+
+        managedEntity.setTimestamp(System.nanoTime());
+
+        entityManager.persist(managedEntity);
+
+        return product;
     }
 
     /**
-     * Загружает (обновляет или заменяет) изображение товарной позиции
+     * Загружает изображение товарной позиции
      * @param productImage изображение товарной позиции
      * @return true - значит успешно, false - если нет
      */
@@ -101,7 +106,20 @@ public class Catalogue {
     public boolean uploadImage(ProductImage productImage) {
         Product product = getProduct(productImage.productID);
         if (product==null) return false;
-        entityManager.persist(productImage);
+
+        ProductImage managedEntity = entityManager.find(ProductImage.class, productImage.productID);
+
+        if (managedEntity==null) {
+            // Если у товарной позиции небыло изображения - добавляем
+            entityManager.persist(productImage);
+        } else {
+            // Если у товарной позиции было изображение - обновляем
+            managedEntity.setFilename(productImage.getFilename());
+            managedEntity.setImage(productImage.getImage());
+            managedEntity.setThumbnail(productImage.getThumbnail());
+            managedEntity.setTimestamp(System.nanoTime());
+            entityManager.persist(managedEntity);
+        }
         return true;
     }
 
@@ -127,7 +145,7 @@ public class Catalogue {
             String query = "SELECT a FROM ProductImage a WHERE a.productID=" + productID;
             return entityManager.createQuery(query, ProductImage.class).getSingleResult();
         } catch (Exception e) {
-            e.printStackTrace();
+            // e.printStackTrace();
         }
         return null;
     }

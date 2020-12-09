@@ -12,10 +12,10 @@ public class ProductImage {
 
     @Id
     public int productID;                   // ID владельца (Product/Category)
-    public String filename;                 // Название файла
-    public byte[] thumbnail;                // Миниатюрное изображение
-    public byte[] image;                    // Полноразмерное изображение
-    public long timestamp;                  // Временная метка обновления изображения
+    private String filename;                 // Название файла
+    private byte[] thumbnail;                // Миниатюрное изображение
+    private byte[] image;                    // Полноразмерное изображение
+    private long timestamp;                  // Временная метка обновления изображения
 
     public ProductImage() {}
 
@@ -27,4 +27,43 @@ public class ProductImage {
         this.timestamp = System.nanoTime();
     }
 
+    public int getProductID() {
+        return productID;
+    }
+
+    public void setProductID(int productID) {
+        this.productID = productID;
+    }
+
+    public String getFilename() {
+        return filename;
+    }
+
+    public void setFilename(String filename) {
+        this.filename = filename;
+    }
+
+    public byte[] getThumbnail() {
+        return thumbnail;
+    }
+
+    public void setThumbnail(byte[] thumbnail) {
+        this.thumbnail = thumbnail;
+    }
+
+    public byte[] getImage() {
+        return image;
+    }
+
+    public void setImage(byte[] image) {
+        this.image = image;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
 }

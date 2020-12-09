@@ -3,8 +3,6 @@ package com.axiom.hermes.model.catalogue.entities;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.OneToMany;
-import java.util.List;
 
 /**
  * Карточка товарной позиции
@@ -15,14 +13,14 @@ public class Product {
     @Id
     @GeneratedValue
     public int productID;                 // ID товара
-    public int categoryID;                // ID категории товара
-    public String vendorCode;             // Артикул товара
-    public String name;                   // Наименование товара
-    public String description;            // Описание товара
-    public String unitOfMeasure;          // Единица измерения
-    public double price;                  // Цена отпуска товара
-    public boolean available;             // Доступно ли клиентам для выбора
-    public long timestamp;                // Дата и время последнего изменения
+    private int categoryID;                // ID категории товара
+    private String vendorCode;             // Артикул товара
+    private String name;                   // Наименование товара
+    private String description;            // Описание товара
+    private String unitOfMeasure;          // Единица измерения
+    private double price;                  // Цена отпуска товара
+    private boolean available;             // Доступно ли клиентам для выбора
+    private long timestamp;                // Дата и время последнего изменения
 
     public Product() { }
 
@@ -34,6 +32,75 @@ public class Product {
         this.price = price;
     }
 
+    public int getProductID() {
+        return productID;
+    }
 
+    public void setProductID(int productID) {
+        this.productID = productID;
+    }
 
+    public int getCategoryID() {
+        return categoryID;
+    }
+
+    public void setCategoryID(int categoryID) {
+        this.categoryID = categoryID;
+    }
+
+    public String getVendorCode() {
+        return vendorCode;
+    }
+
+    public void setVendorCode(String vendorCode) {
+        this.vendorCode = vendorCode;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getUnitOfMeasure() {
+        return unitOfMeasure;
+    }
+
+    public void setUnitOfMeasure(String unitOfMeasure) {
+        this.unitOfMeasure = unitOfMeasure;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
+    public boolean isAvailable() {
+        return available;
+    }
+
+    public void setAvailable(boolean available) {
+        this.available = available;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
 }
