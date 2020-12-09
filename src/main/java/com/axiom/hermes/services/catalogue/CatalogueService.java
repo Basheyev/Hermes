@@ -19,6 +19,8 @@ import java.util.Map;
 
 /**
  * Сервис каталога товаров
+ * todo стандартизировать ответы
+ * todo поставить защиту от очевидных ошибок клиентского приложения
  */
 @Path("/catalogue")
 @Produces(MediaType.APPLICATION_JSON)
@@ -79,9 +81,12 @@ public class CatalogueService {
     @POST
     @Path("/addProduct")
     public Product addProduct(Product newProduct) {
+        // todo возвращать нормальные коды
         Product product = catalogue.addProduct(newProduct);
         if (product==null) return null;
+
         System.out.println("New product added name:" + product.getName() + " Description:" + product.getDescription());
+
         return product;
     }
 
@@ -92,8 +97,13 @@ public class CatalogueService {
      */
     @POST
     @Path("/updateProduct")
-    public Product updateProduct(Product product) {
-        return catalogue.updateProduct(product);
+    public Response updateProduct(Product product) {
+        Product managed = catalogue.updateProduct(product);
+        if (managed==null) {
+            return Response.status(HTTP_NOT_FOUND,
+                   "productID=" + product.getProductID() + " not found").build();
+        }
+        return Response.ok().build();
     }
 
     /**
@@ -201,7 +211,7 @@ public class CatalogueService {
             }
 
             System.out.println(
-                    "PRODUCT IMAGE UPLOAD:" +
+                    "PRODUCT IMAGE UPLOADED:" +
                     " ProductID=" + productID +
                     " filename=\"" + fileName + "\"" +
                     " size: " + originalImage.length + " bytes" +
