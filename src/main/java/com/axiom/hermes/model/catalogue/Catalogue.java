@@ -2,15 +2,11 @@ package com.axiom.hermes.model.catalogue;
 
 import com.axiom.hermes.model.catalogue.entities.Product;
 import com.axiom.hermes.model.catalogue.entities.ProductImage;
-import net.coobird.thumbnailator.Thumbnailator;
-import net.coobird.thumbnailator.Thumbnails;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -28,6 +24,7 @@ public class Catalogue {
      * Возвращает весь список доступных для заказа позиций каталога товаров
      * @return список карточек товарных позиций
      */
+    @Transactional
     public List<Product> getAvailableProducts() {
         List<Product> availableProducts;
         String query = "SELECT a FROM Product a WHERE a.available=TRUE";
@@ -39,6 +36,7 @@ public class Catalogue {
      * Возвращает весь список позиций каталога товаров (включая недоступные для заказа)
      * @return список карточек товарных позиций
      */
+    @Transactional
     public List<Product> getAllProducts() {
         List<Product> allProducts;
         String query = "SELECT a FROM Product a";
@@ -52,6 +50,7 @@ public class Catalogue {
      * @param id товарной позиции
      * @return карточка товарной позиции
      */
+    @Transactional
     public Product getProduct(int id) {
         String query = "SELECT a FROM Product a WHERE a.productID=" + id;
         List<Product> result = entityManager.createQuery(query, Product.class).getResultList();
@@ -68,7 +67,7 @@ public class Catalogue {
     public Product addProduct(Product product) {
         if (product.productID != 0) return null;
         product.available = true;
-        product.lastModification = System.nanoTime();
+        product.timestamp = System.nanoTime();
         entityManager.persist(product);
         return product;
     }
@@ -80,15 +79,15 @@ public class Catalogue {
      */
     @Transactional
     public Product updateProduct(Product product) {
-        // fixme не сохраняет
         Product existingProduct = getProduct(product.productID);
+        if (existingProduct==null) return null;
         existingProduct.vendorCode = product.vendorCode;
         existingProduct.name = product.name;
         existingProduct.description = product.description;
         existingProduct.price = product.price;
         existingProduct.unitOfMeasure = product.unitOfMeasure;
         existingProduct.available = product.available;
-        existingProduct.lastModification = System.nanoTime();
+        existingProduct.timestamp = System.nanoTime();
         entityManager.persist(existingProduct);
         return existingProduct;
     }

@@ -22,7 +22,7 @@ public class Product {
     public String unitOfMeasure;          // Единица измерения
     public double price;                  // Цена отпуска товара
     public boolean available;             // Доступно ли клиентам для выбора
-    public long lastModification;         // Дата и время последнего изменения
+    public long timestamp;                // Дата и время последнего изменения
 
     public Product() { }
 

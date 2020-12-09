@@ -191,7 +191,7 @@ public class CatalogueService {
             Thumbnails.of(new ByteArrayInputStream(originalImage))
                     .size(MAX_THUMBNAIL_DIMENSION,MAX_THUMBNAIL_DIMENSION)
                     .toOutputStream(thumbnailOutput);
-            byte[] thumbnail = thumbnailOutput.toByteArray();;
+            byte[] thumbnail = thumbnailOutput.toByteArray();
             //------------------------------------------------------------------------------------
             // Создать объект ProductImage и сохранить его в базе данных
             //------------------------------------------------------------------------------------
@@ -215,7 +215,11 @@ public class CatalogueService {
     }
 
 
-
+    /**
+     * Получить из поля формы значение поля productID
+     * @param productInputParts заголовок части формы
+     * @return productID товарной позиции
+     */
     private int parseProductID(List<InputPart> productInputParts) {
         int productID = INVALID;
         try {
@@ -230,6 +234,11 @@ public class CatalogueService {
     }
 
 
+    /**
+     * Получает из заголовка части многосоставной формы имя файла изображения
+     * @param header заголовок части многосоставной формы
+     * @return имя файла или "unknown" если не найдено
+     */
     private String parseFileName(MultivaluedMap<String, String> header) {
         String[] contentDisposition = header.getFirst("Content-Disposition").split(";");
         try {
