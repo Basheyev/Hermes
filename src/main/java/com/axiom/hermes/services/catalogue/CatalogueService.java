@@ -81,7 +81,7 @@ public class CatalogueService {
     public Product addProduct(Product newProduct) {
         Product product = catalogue.addProduct(newProduct);
         if (product==null) return null;
-        System.out.println("New product added name:" + product.name + " Description:" + product.description);
+        System.out.println("New product added name:" + product.getName() + " Description:" + product.getDescription());
         return product;
     }
 
@@ -128,8 +128,8 @@ public class CatalogueService {
     public Response downloadImage(@QueryParam("id") int id) {
         ProductImage productImage = catalogue.getProductImage(id);
         if (productImage==null) return Response.status(HTTP_NOT_FOUND, "imageID=" + id + " not found").build();
-        byte[] imageBytes = productImage.image;
-        String filename = productImage.filename;
+        byte[] imageBytes = productImage.getImage();
+        String filename = productImage.getFilename();
         Response.ResponseBuilder responseBuilder = Response.ok(imageBytes);
         responseBuilder.header("Content-Disposition", "inline; filename=\"" + filename + "\"")
                 .header("Content-Type", "image/jpeg");
