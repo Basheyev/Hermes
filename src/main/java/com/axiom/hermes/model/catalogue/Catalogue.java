@@ -81,6 +81,7 @@ public class Catalogue {
     public Product updateProduct(Product product) {
 
         Product managedEntity = entityManager.find(Product.class, product.productID);
+        if (managedEntity==null) return null;
 
         managedEntity.setCategoryID(product.getCategoryID());
         managedEntity.setVendorCode(product.getVendorCode());
@@ -106,9 +107,7 @@ public class Catalogue {
     public boolean uploadImage(ProductImage productImage) {
         Product product = getProduct(productImage.productID);
         if (product==null) return false;
-
         ProductImage managedEntity = entityManager.find(ProductImage.class, productImage.productID);
-
         if (managedEntity==null) {
             // Если у товарной позиции небыло изображения - добавляем
             entityManager.persist(productImage);
