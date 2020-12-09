@@ -1,4 +1,4 @@
-package com.axiom.hermes.model.inventory;
+package com.axiom.hermes.model.inventory.entities;
 
 /**
  * Складская карточка по товарной позиции

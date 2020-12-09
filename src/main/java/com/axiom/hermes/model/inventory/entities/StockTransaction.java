@@ -1,8 +1,13 @@
-package com.axiom.hermes.model.inventory;
+package com.axiom.hermes.model.inventory.entities;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
 
 /**
  * Транзакция на складе
  */
+@Entity
 public class StockTransaction {
 
     //-------------------------------------------------------------------------------------
@@ -16,8 +21,10 @@ public class StockTransaction {
     public static final int OP_WRITE_OF = 6;            // Списание товара (расход)
     //-------------------------------------------------------------------------------------
 
+    @Id
+    @GeneratedValue
     public long transactionID;       // код транзакции
-    public long time;                // время транзакции в наносекундах
+    public long timestamp;           // время транзакции в наносекундах
     public int productID;            // код товара
     public int side;                 // дебет/кредит
     public int operationCode;        // код операции
