@@ -79,10 +79,8 @@ public class Catalogue {
      */
     @Transactional
     public Product updateProduct(Product product) {
-
         Product managedEntity = entityManager.find(Product.class, product.productID);
         if (managedEntity==null) return null;
-
         managedEntity.setCategoryID(product.getCategoryID());
         managedEntity.setVendorCode(product.getVendorCode());
         managedEntity.setName(product.getName());
@@ -90,11 +88,8 @@ public class Catalogue {
         managedEntity.setPrice(product.getPrice());
         managedEntity.setUnitOfMeasure(product.getUnitOfMeasure());
         managedEntity.setAvailable(product.isAvailable());
-
         managedEntity.setTimestamp(System.nanoTime());
-
         entityManager.persist(managedEntity);
-
         return product;
     }
 
