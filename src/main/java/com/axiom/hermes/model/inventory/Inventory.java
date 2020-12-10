@@ -112,6 +112,13 @@ public class Inventory {
     // Пересорт (regrade)
     public void regrade() {   }
 
+
+    @Transactional
+    public StockInformation getStockInformation(int productID) {
+        return entityManager.find(StockInformation.class, productID);
+    }
+
+
     @Transactional
     private void debitProductStock(int productID, int amount) {
         StockInformation stockInfo = entityManager.find(

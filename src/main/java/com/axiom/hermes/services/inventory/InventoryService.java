@@ -1,6 +1,7 @@
 package com.axiom.hermes.services.inventory;
 
 import com.axiom.hermes.model.inventory.Inventory;
+import com.axiom.hermes.model.inventory.entities.StockInformation;
 import com.axiom.hermes.model.inventory.entities.StockTransaction;
 
 import javax.inject.Inject;
@@ -55,6 +56,12 @@ public class InventoryService {
                                      @QueryParam("amount") int amount,
                                      @QueryParam("price") double price) {
         return inventory.writeOff(productID, amount, price);
+    }
+
+    @GET
+    @Path("/getStockInformation")
+    public StockInformation getStockInformation(@QueryParam("id") int productID) {
+        return inventory.getStockInformation(productID);
     }
 
 }
