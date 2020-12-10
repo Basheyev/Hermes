@@ -112,6 +112,12 @@ public class Inventory {
     // Пересорт (regrade)
     public void regrade() {   }
 
+    @Transactional
+    public StockInformation createStockKeepingUnit(int productID) {
+        StockInformation stockInfo = new StockInformation(productID);
+        entityManager.persist(stockInfo);
+        return stockInfo;
+    }
 
     @Transactional
     public StockInformation getStockInformation(int productID) {

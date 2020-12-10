@@ -15,6 +15,14 @@ public class StockInformation {
     private long availableForSale;         // Всего доступного для продажи товара
     private long reorderPoint;             // Минимальные остатки
 
+    public StockInformation(int productID) {
+        this.productID = productID;
+        this.stockOnHand = 0;
+        this.committedStock = 0;
+        this.availableForSale = 0;
+        this.reorderPoint = 0;
+    }
+
     public int getProductID() {
         return productID;
     }

@@ -2,6 +2,7 @@ package com.axiom.hermes.model.catalogue;
 
 import com.axiom.hermes.model.catalogue.entities.Product;
 import com.axiom.hermes.model.catalogue.entities.ProductImage;
+import com.axiom.hermes.model.inventory.Inventory;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -17,6 +18,9 @@ public class Catalogue {
 
     @Inject
     EntityManager entityManager;
+
+    @Inject
+    Inventory inventory;
 
     public Catalogue() { }
 
@@ -69,6 +73,7 @@ public class Catalogue {
         product.setAvailable(true);
         product.setTimestamp(System.currentTimeMillis());
         entityManager.persist(product);
+        inventory.createStockKeepingUnit(product.productID);
         return product;
     }
 
