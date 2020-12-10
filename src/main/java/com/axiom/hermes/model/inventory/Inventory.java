@@ -1,11 +1,13 @@
 package com.axiom.hermes.model.inventory;
 
 
+import com.axiom.hermes.model.inventory.entities.StockInformation;
 import com.axiom.hermes.model.inventory.entities.StockTransaction;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
 import javax.transaction.Transactional;
 
 @ApplicationScoped
@@ -28,6 +30,7 @@ public class Inventory {
                 StockTransaction.DEBIT_PURCHASE,
                 amount, price);
         entityManager.persist(purchaseTransaction);
+        debitProductStock(productID, amount);
         return purchaseTransaction;
     }
 
@@ -46,6 +49,7 @@ public class Inventory {
                 StockTransaction.DEBIT_SALE_RETURN,
                 amount, price);
         entityManager.persist(saleReturnTransaction);
+        debitProductStock(productID, amount);
         return saleReturnTransaction;
     }
 
@@ -63,6 +67,7 @@ public class Inventory {
                 StockTransaction.CREDIT_SALE,
                 amount, price);
         entityManager.persist(saleTransaction);
+        creditProductStock(productID, amount);
         return saleTransaction;
     }
 
@@ -80,6 +85,7 @@ public class Inventory {
                 StockTransaction.CREDIT_PURCHASE_RETURN,
                 amount, price);
         entityManager.persist(purchaseReturnTransaction);
+        creditProductStock(productID, amount);
         return purchaseReturnTransaction;
     }
 
@@ -97,13 +103,34 @@ public class Inventory {
                 StockTransaction.SIDE_CREDIT,
                 StockTransaction.CREDIT_WRITE_OFF,
                 amount, price);
-
         entityManager.persist(writeOffTransaction);
-
+        creditProductStock(productID, amount);
         return writeOffTransaction;
     }
 
     // Пересорт (regrade)
-    // public void regrade
+    public void regrade() {   }
+
+    @Transactional
+    private void debitProductStock(int productID, int amount) {
+        StockInformation stockInfo = entityManager.find(
+                StockInformation.class,
+                productID,
+                LockModeType.PESSIMISTIC_WRITE);
+        if (stockInfo==null) return;
+        stockInfo.setStockOnHand(stockInfo.getStockOnHand() + amount);
+        entityManager.persist(stockInfo);
+    }
+
+    @Transactional
+    private void creditProductStock(int productID, int amount) {
+        StockInformation stockInfo = entityManager.find(
+                StockInformation.class,
+                productID,
+                LockModeType.PESSIMISTIC_WRITE);
+        if (stockInfo==null) return;
+        stockInfo.setStockOnHand(stockInfo.getStockOnHand() - amount);
+        entityManager.persist(stockInfo);
+    }
 
 }
