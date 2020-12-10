@@ -12,7 +12,7 @@ import javax.persistence.Id;
 public class Product {
     @Id
     @GeneratedValue
-    public int productID;                 // ID товара
+    public int productID;                  // ID товара
     private int categoryID;                // ID категории товара
     private String vendorCode;             // Артикул товара
     private String name;                   // Наименование товара
@@ -20,7 +20,7 @@ public class Product {
     private String unitOfMeasure;          // Единица измерения
     private double price;                  // Цена отпуска товара
     private boolean available;             // Доступно ли клиентам для выбора
-    private long timestamp;                // Дата и время последнего изменения
+    private long timestamp;                // Время последнего изменения в миллисекунлаз
 
     public Product() { }
 

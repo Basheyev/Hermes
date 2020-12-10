@@ -11,11 +11,11 @@ import java.io.IOException;
 public class ProductImage {
 
     @Id
-    public int productID;                   // ID владельца (Product/Category)
+    public int productID;                    // ID владельца (Product/Category)
     private String filename;                 // Название файла
     private byte[] thumbnail;                // Миниатюрное изображение
     private byte[] image;                    // Полноразмерное изображение
-    private long timestamp;                  // Временная метка обновления изображения
+    private long timestamp;                  // Время последнего изменения в миллисекундах
 
     public ProductImage() {}
 
@@ -24,7 +24,7 @@ public class ProductImage {
         this.filename = filename;
         this.image = imageFile;
         this.thumbnail = thumbnail;
-        this.timestamp = System.nanoTime();
+        this.timestamp = System.currentTimeMillis();
     }
 
     public int getProductID() {

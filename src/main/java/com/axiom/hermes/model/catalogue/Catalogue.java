@@ -67,7 +67,7 @@ public class Catalogue {
     public Product addProduct(Product product) {
         if (product.productID != 0) return null;
         product.setAvailable(true);
-        product.setTimestamp(System.nanoTime());
+        product.setTimestamp(System.currentTimeMillis());
         entityManager.persist(product);
         return product;
     }
@@ -88,7 +88,7 @@ public class Catalogue {
         managedEntity.setPrice(product.getPrice());
         managedEntity.setUnitOfMeasure(product.getUnitOfMeasure());
         managedEntity.setAvailable(product.isAvailable());
-        managedEntity.setTimestamp(System.nanoTime());
+        managedEntity.setTimestamp(System.currentTimeMillis());
         entityManager.persist(managedEntity);
         return product;
     }
@@ -111,7 +111,7 @@ public class Catalogue {
             managedEntity.setFilename(productImage.getFilename());
             managedEntity.setImage(productImage.getImage());
             managedEntity.setThumbnail(productImage.getThumbnail());
-            managedEntity.setTimestamp(System.nanoTime());
+            managedEntity.setTimestamp(System.currentTimeMillis());
             entityManager.persist(managedEntity);
         }
         return true;
