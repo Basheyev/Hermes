@@ -10,6 +10,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
 import javax.transaction.Transactional;
 
+// TODO сделать защиту от отрицательных остатков
 @ApplicationScoped
 public class Inventory {
 
