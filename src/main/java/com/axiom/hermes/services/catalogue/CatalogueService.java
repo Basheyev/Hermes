@@ -57,7 +57,7 @@ public class CatalogueService {
      * @return список товарных позиций
      */
     @GET
-    @Path("/allProducts")
+    @Path("/getAllProducts")
     public List<Product> getAllProducts() {
         return catalogue.getAllProducts();
     }
