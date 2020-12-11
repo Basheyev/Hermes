@@ -7,6 +7,7 @@ import com.axiom.hermes.model.inventory.entities.StockTransaction;
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 @Path("/inventory")
 @Produces(MediaType.APPLICATION_JSON)
@@ -20,48 +21,60 @@ public class InventoryService {
 
     @GET
     @Path("/purchase")
-    public StockTransaction purchase(@QueryParam("id") int productID,
-                                     @QueryParam("amount") int amount,
-                                     @QueryParam("price") double price) {
-        return inventory.purchase(productID, amount, price);
+    public Response purchase(@QueryParam("id") int productID,
+                             @QueryParam("amount") int amount,
+                             @QueryParam("price") double price) {
+        StockTransaction purchase = inventory.purchase(productID, amount, price);
+        if (purchase==null) return Response.status(Response.Status.NOT_FOUND).build();
+        return Response.ok(purchase).build();
     }
 
     @GET
     @Path("/saleReturn")
-    public StockTransaction saleReturn(@QueryParam("id") int productID,
-                                       @QueryParam("amount") int amount,
-                                       @QueryParam("price") double price) {
-        return inventory.saleReturn(productID, amount, price);
+    public Response saleReturn(@QueryParam("id") int productID,
+                               @QueryParam("amount") int amount,
+                               @QueryParam("price") double price) {
+        StockTransaction saleReturn = inventory.saleReturn(productID, amount, price);
+        if (saleReturn==null) return Response.status(Response.Status.NOT_FOUND).build();
+        return Response.ok(saleReturn).build();
     }
 
     @GET
     @Path("/sale")
-    public StockTransaction sale(@QueryParam("id") int productID,
-                                 @QueryParam("amount") int amount,
-                                 @QueryParam("price") double price) {
-        return inventory.sale(productID, amount, price);
+    public Response sale(@QueryParam("id") int productID,
+                         @QueryParam("amount") int amount,
+                         @QueryParam("price") double price) {
+        StockTransaction sale = inventory.sale(productID, amount, price);
+        if (sale==null) return Response.status(Response.Status.NOT_FOUND).build();
+        return Response.ok(sale).build();
     }
 
     @GET
     @Path("/purchaseReturn")
-    public StockTransaction purchaseReturn(@QueryParam("id") int productID,
-                                           @QueryParam("amount") int amount,
-                                           @QueryParam("price") double price) {
-        return inventory.purchaseReturn(productID, amount, price);
+    public Response purchaseReturn(@QueryParam("id") int productID,
+                                   @QueryParam("amount") int amount,
+                                   @QueryParam("price") double price) {
+        StockTransaction purchaseReturn = inventory.purchaseReturn(productID, amount, price);
+        if (purchaseReturn==null) return Response.status(Response.Status.NOT_FOUND).build();
+        return Response.ok(purchaseReturn).build();
     }
 
     @GET
     @Path("/writeOff")
-    public StockTransaction writeOff(@QueryParam("id") int productID,
-                                     @QueryParam("amount") int amount,
-                                     @QueryParam("price") double price) {
-        return inventory.writeOff(productID, amount, price);
+    public Response writeOff(@QueryParam("id") int productID,
+                             @QueryParam("amount") int amount,
+                             @QueryParam("price") double price) {
+        StockTransaction writeOff = inventory.writeOff(productID, amount, price);
+        if (writeOff==null) return Response.status(Response.Status.NOT_FOUND).build();
+        return Response.ok(writeOff).build();
     }
 
     @GET
     @Path("/getStockInformation")
-    public StockInformation getStockInformation(@QueryParam("id") int productID) {
-        return inventory.getStockInformation(productID);
+    public Response getStockInformation(@QueryParam("id") int productID) {
+        StockInformation stockInfo = inventory.getStockInformation(productID);
+        if (stockInfo==null) return Response.status(Response.Status.NOT_FOUND).build();
+        return Response.ok(stockInfo).build();
     }
 
 }

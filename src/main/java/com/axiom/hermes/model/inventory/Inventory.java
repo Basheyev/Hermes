@@ -10,7 +10,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
 import javax.transaction.Transactional;
 
-// TODO сделать защиту от отрицательных остатков
 @ApplicationScoped
 public class Inventory {
 
@@ -26,12 +25,12 @@ public class Inventory {
      */
     @Transactional
     public StockTransaction purchase(int productID, int amount, double price) {
+        if (!debitProductStock(productID, amount)) return null;
         StockTransaction purchaseTransaction = new StockTransaction(productID,
                 StockTransaction.SIDE_DEBIT,
                 StockTransaction.DEBIT_PURCHASE,
                 amount, price);
         entityManager.persist(purchaseTransaction);
-        debitProductStock(productID, amount);
         return purchaseTransaction;
     }
 
@@ -45,12 +44,12 @@ public class Inventory {
      */
     @Transactional
     public StockTransaction saleReturn(int productID, int amount, double price) {
+        if (!debitProductStock(productID, amount)) return null;
         StockTransaction saleReturnTransaction = new StockTransaction(productID,
                 StockTransaction.SIDE_DEBIT,
                 StockTransaction.DEBIT_SALE_RETURN,
                 amount, price);
         entityManager.persist(saleReturnTransaction);
-        debitProductStock(productID, amount);
         return saleReturnTransaction;
     }
 
@@ -59,16 +58,16 @@ public class Inventory {
      * @param productID код товарной позиции
      * @param amount количество
      * @param price цена
-     * @return true - если проведена, false - если нет
+     * @return true - если проведена, false - если нет товара
      */
     @Transactional
     public StockTransaction sale(int productID, int amount, double price) {
+        if (!creditProductStock(productID, amount)) return null;
         StockTransaction saleTransaction = new StockTransaction(productID,
                 StockTransaction.SIDE_CREDIT,
                 StockTransaction.CREDIT_SALE,
                 amount, price);
         entityManager.persist(saleTransaction);
-        creditProductStock(productID, amount);
         return saleTransaction;
     }
 
@@ -81,12 +80,12 @@ public class Inventory {
      */
     @Transactional
     public StockTransaction purchaseReturn(int productID, int amount, double price) {
+        if (!creditProductStock(productID, amount)) return null;
         StockTransaction purchaseReturnTransaction = new StockTransaction(productID,
                 StockTransaction.SIDE_CREDIT,
                 StockTransaction.CREDIT_PURCHASE_RETURN,
                 amount, price);
         entityManager.persist(purchaseReturnTransaction);
-        creditProductStock(productID, amount);
         return purchaseReturnTransaction;
     }
 
@@ -100,12 +99,12 @@ public class Inventory {
      */
     @Transactional
     public StockTransaction writeOff(int productID, int amount, double price) {
+        if (!creditProductStock(productID, amount)) return null;
         StockTransaction writeOffTransaction = new StockTransaction(productID,
                 StockTransaction.SIDE_CREDIT,
                 StockTransaction.CREDIT_WRITE_OFF,
                 amount, price);
         entityManager.persist(writeOffTransaction);
-        creditProductStock(productID, amount);
         return writeOffTransaction;
     }
 
@@ -126,25 +125,28 @@ public class Inventory {
 
 
     @Transactional
-    private void debitProductStock(int productID, int amount) {
+    private boolean debitProductStock(int productID, int amount) {
         StockInformation stockInfo = entityManager.find(
                 StockInformation.class,
                 productID,
                 LockModeType.PESSIMISTIC_WRITE);
-        if (stockInfo==null) return;
+        if (stockInfo==null) return false;
         stockInfo.setStockOnHand(stockInfo.getStockOnHand() + amount);
         entityManager.persist(stockInfo);
+        return true;
     }
 
     @Transactional
-    private void creditProductStock(int productID, int amount) {
+    private boolean creditProductStock(int productID, int amount) {
         StockInformation stockInfo = entityManager.find(
                 StockInformation.class,
                 productID,
                 LockModeType.PESSIMISTIC_WRITE);
-        if (stockInfo==null) return;
+        if (stockInfo==null) return false;
+        if (stockInfo.getStockOnHand() - amount < 0) return false;
         stockInfo.setStockOnHand(stockInfo.getStockOnHand() - amount);
         entityManager.persist(stockInfo);
+        return true;
     }
 
 }
