@@ -8,6 +8,7 @@ import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.List;
 
 @Path("/inventory")
 @Produces(MediaType.APPLICATION_JSON)
@@ -18,6 +19,13 @@ public class InventoryService {
     Inventory inventory;
 
     public InventoryService() { }
+
+    @GET
+    public Response getAllStocks() {
+        List<StockInformation> allStock = inventory.getAllStocks();
+        if (allStock==null) return Response.status(Response.Status.NOT_FOUND).build();
+        return Response.ok(allStock).build();
+    }
 
     @GET
     @Path("/purchase")

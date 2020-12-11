@@ -1,6 +1,7 @@
 package com.axiom.hermes.model.inventory;
 
 
+import com.axiom.hermes.model.catalogue.entities.Product;
 import com.axiom.hermes.model.inventory.entities.StockInformation;
 import com.axiom.hermes.model.inventory.entities.StockTransaction;
 
@@ -9,12 +10,26 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
 import javax.transaction.Transactional;
+import java.util.List;
 
 @ApplicationScoped
 public class Inventory {
 
     @Inject
     EntityManager entityManager;
+
+    /**
+     * Возвращает информацию по всем складским карточкам
+     * @return список складских карточек
+     */
+    @Transactional
+    public List<StockInformation> getAllStocks() {
+        List<StockInformation> allStocks;
+        String query = "SELECT a FROM StockInformation a";
+        allStocks = entityManager.createQuery(query, StockInformation.class).getResultList();
+        return allStocks;
+    }
+
 
     /**
      * Регистрация покупки товара (приход)
@@ -122,7 +137,6 @@ public class Inventory {
     public StockInformation getStockInformation(int productID) {
         return entityManager.find(StockInformation.class, productID);
     }
-
 
     @Transactional
     private boolean debitProductStock(int productID, int amount) {

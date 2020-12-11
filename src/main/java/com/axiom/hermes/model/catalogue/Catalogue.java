@@ -133,7 +133,7 @@ public class Catalogue {
             String query = "SELECT a.thumbnail FROM ProductImage a WHERE a.productID=" + productID;
             return entityManager.createQuery(query, byte[].class).getSingleResult();
         } catch (Exception e) {
-            e.printStackTrace();
+            // e.printStackTrace();
         }
         return null;
     }
