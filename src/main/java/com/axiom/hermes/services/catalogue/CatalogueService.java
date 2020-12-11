@@ -19,8 +19,6 @@ import java.util.Map;
 
 /**
  * Сервис каталога товаров
- * todo стандартизировать логику API и ответы
- * todo поставить защиту от очевидных ошибок клиентского приложения
  */
 @Path("/catalogue")
 @Produces(MediaType.APPLICATION_JSON)
@@ -48,8 +46,10 @@ public class CatalogueService {
      * @return список товарных позиций
      */
     @GET
-    public List<Product> getAvailableProducts() {
-        return catalogue.getAvailableProducts();
+    public Response getAvailableProducts() {
+        List<Product> availableProducts = catalogue.getAvailableProducts();
+        if (availableProducts==null) return Response.status(Response.Status.NOT_FOUND).build();
+        return Response.ok(availableProducts).build();
     }
 
     /**
@@ -58,8 +58,10 @@ public class CatalogueService {
      */
     @GET
     @Path("/getAllProducts")
-    public List<Product> getAllProducts() {
-        return catalogue.getAllProducts();
+    public Response getAllProducts() {
+        List<Product> allProducts = catalogue.getAllProducts();
+        if (allProducts==null) return Response.status(Response.Status.NOT_FOUND).build();
+        return Response.ok(allProducts).build();
     }
 
     /**
@@ -69,8 +71,10 @@ public class CatalogueService {
      */
     @GET
     @Path("/getProduct")
-    public Product getProduct(@QueryParam("id") int id) {
-        return catalogue.getProduct(id);
+    public Response getProduct(@QueryParam("id") int id) {
+        Product product = catalogue.getProduct(id);
+        if (product==null) return Response.status(Response.Status.NOT_FOUND).build();
+        return Response.ok(product).build();
     }
 
     /**
@@ -80,14 +84,10 @@ public class CatalogueService {
      */
     @POST
     @Path("/addProduct")
-    public Product addProduct(Product newProduct) {
-        // todo возвращать нормальные коды
+    public Response addProduct(Product newProduct) {
         Product product = catalogue.addProduct(newProduct);
-        if (product==null) return null;
-
-        System.out.println("New product added name:" + product.getName() + " Description:" + product.getDescription());
-
-        return product;
+        if (product==null) return Response.status(Response.Status.FORBIDDEN).build();
+        return Response.ok(product).build();
     }
 
     /**
@@ -238,7 +238,7 @@ public class CatalogueService {
                 productID = Integer.parseInt(value);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            // e.printStackTrace();
         }
         return productID;
     }
@@ -259,7 +259,7 @@ public class CatalogueService {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+           // e.printStackTrace();
         }
         return "unknown";
     }
