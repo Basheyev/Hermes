@@ -130,6 +130,11 @@ public class Inventory {
     // Пересорт (regrade)
     public void regrade() {   }
 
+    /**
+     * Создать складскую карточку под товарную позицию
+     * @param productID код товарной позиции
+     * @return складская карточка
+     */
     @Transactional
     public StockInformation createStockKeepingUnit(int productID) {
         StockInformation stockInfo = new StockInformation(productID);
@@ -137,9 +142,16 @@ public class Inventory {
         return stockInfo;
     }
 
+
+    /**
+     * Получить складскую карточку по коду товарной позиции
+     * @param productID код товарной позиции
+     * @return складская карточка
+     */
     @Transactional
     public StockInformation getStockInformation(int productID) {
         StockInformation stockInfo = entityManager.find(StockInformation.class, productID);
+        // Если складской карточки нет, то создаём её если такая товарная позиция есть
         if (stockInfo==null) {
             Product product = catalogue.getProduct(productID);
             if (product==null) return null;
@@ -147,6 +159,8 @@ public class Inventory {
         }
         return stockInfo;
     }
+
+
 
     /**
      * Оформление прихода в складской карточке
@@ -173,6 +187,8 @@ public class Inventory {
         entityManager.persist(stockInfo);
         return true;
     }
+
+
 
     /**
      * Оформление расхода в складской карточке
