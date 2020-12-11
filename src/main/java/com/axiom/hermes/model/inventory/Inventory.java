@@ -131,8 +131,11 @@ public class Inventory {
                 productID,
                 LockModeType.PESSIMISTIC_WRITE);
         if (stockInfo==null) return false;
-        stockInfo.setStockOnHand(stockInfo.getStockOnHand() + amount);
+
+        long newBalance = stockInfo.getStockOnHand() + amount;
+        stockInfo.setStockOnHand(newBalance);
         entityManager.persist(stockInfo);
+
         return true;
     }
 
@@ -143,9 +146,12 @@ public class Inventory {
                 productID,
                 LockModeType.PESSIMISTIC_WRITE);
         if (stockInfo==null) return false;
-        if (stockInfo.getStockOnHand() - amount < 0) return false;
-        stockInfo.setStockOnHand(stockInfo.getStockOnHand() - amount);
+
+        long newBalance = stockInfo.getStockOnHand() - amount;
+        if (newBalance < 0) return false;
+        stockInfo.setStockOnHand(newBalance);
         entityManager.persist(stockInfo);
+
         return true;
     }
 
