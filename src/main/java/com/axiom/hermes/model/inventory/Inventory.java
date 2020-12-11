@@ -1,6 +1,7 @@
 package com.axiom.hermes.model.inventory;
 
 
+import com.axiom.hermes.model.catalogue.Catalogue;
 import com.axiom.hermes.model.catalogue.entities.Product;
 import com.axiom.hermes.model.inventory.entities.StockInformation;
 import com.axiom.hermes.model.inventory.entities.StockTransaction;
@@ -17,6 +18,9 @@ public class Inventory {
 
     @Inject
     EntityManager entityManager;
+
+    @Inject
+    Catalogue catalogue;
 
     /**
      * Возвращает информацию по всем складским карточкам
@@ -135,24 +139,47 @@ public class Inventory {
 
     @Transactional
     public StockInformation getStockInformation(int productID) {
-        return entityManager.find(StockInformation.class, productID);
+        StockInformation stockInfo = entityManager.find(StockInformation.class, productID);
+        if (stockInfo==null) {
+            Product product = catalogue.getProduct(productID);
+            if (product==null) return null;
+            stockInfo = createStockKeepingUnit(productID);
+        }
+        return stockInfo;
     }
 
+    /**
+     * Оформление прихода в складской карточке
+     * @param productID код товарной позиции
+     * @param amount количество
+     * @return true если успешно, false - если такой товарной позиции нет
+     */
     @Transactional
     private boolean debitProductStock(int productID, int amount) {
         StockInformation stockInfo = entityManager.find(
                 StockInformation.class,
                 productID,
                 LockModeType.PESSIMISTIC_WRITE);
-        if (stockInfo==null) return false;
+
+        // Если складской карточки нет, то создаём её если такая товарная позиция есть
+        if (stockInfo==null) {
+            Product product = catalogue.getProduct(productID);
+            if (product==null) return false;
+            stockInfo = createStockKeepingUnit(productID);
+        }
 
         long newBalance = stockInfo.getStockOnHand() + amount;
         stockInfo.setStockOnHand(newBalance);
         entityManager.persist(stockInfo);
-
         return true;
     }
 
+    /**
+     * Оформление расхода в складской карточке
+     * @param productID код товарной позиции
+     * @param amount количество
+     * @return true - если успешно, false - если столько товара нет
+     */
     @Transactional
     private boolean creditProductStock(int productID, int amount) {
         StockInformation stockInfo = entityManager.find(
