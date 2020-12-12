@@ -55,13 +55,32 @@ public class CatalogueServiceTest {
 
     @Test
     @Order(3)
+    public void getProduct() {
+        String reposnse =
+                given().
+                        when().get("/catalogue/getProduct?productID=" + productID).
+                        then().statusCode(200).assertThat()
+                        .body("vendorCode", equalTo("CCMAC"))
+                        .body("description", equalTo("MACCOFFEE"))
+                .extract().asString();
+        LOG.info("Product get: " + reposnse);
+    }
+
+
+    @Test
+    @Order(4)
     public void removeProduct() {
         //productID = 4;
         String reposnse =
         given().
                 when().get("/catalogue/removeProduct?productID=" + productID).
                 then().statusCode(200).extract().asString();
-        LOG.info("Product deleted response: " + reposnse);
+
+        given().
+                when().get("/catalogue/getProduct?productID=" + productID).
+                then().statusCode(404).assertThat();
+
+        LOG.info("Product deleted :" + reposnse);
     }
 
 }

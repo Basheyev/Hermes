@@ -71,7 +71,7 @@ public class CatalogueService {
      */
     @GET
     @Path("/getProduct")
-    public Response getProduct(@QueryParam("id") int id) {
+    public Response getProduct(@QueryParam("productID") int id) {
         Product product = catalogue.getProduct(id);
         if (product==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(product).build();
@@ -116,42 +116,42 @@ public class CatalogueService {
 
     /**
      * Возвращает миниатюру изображения вписанную в размер 128x128
-     * @param id товарной позиции
+     * @param productID товарной позиции
      * @return изображение миниатюры (image/jpeg)
      */
     @GET
     @Path("/downloadThumbnail")
-    public Response downloadThumbnail(@QueryParam("id") int id) {
-        byte[] bytes = catalogue.getProductThumbnail(id);
+    public Response downloadThumbnail(@QueryParam("productID") int productID) {
+        byte[] bytes = catalogue.getProductThumbnail(productID);
         if (bytes==null) {
-            System.out.println("Thumbnail of productID=" + id + " not found");
-            return Response.status(HTTP_NOT_FOUND, "productID=" + id + " not found").build();
+            System.out.println("Thumbnail of productID=" + productID + " not found");
+            return Response.status(HTTP_NOT_FOUND, "productID=" + productID + " not found").build();
         }
-        String filename = "thumbnail" + id + ".jpg";
+        String filename = "thumbnail" + productID + ".jpg";
         Response.ResponseBuilder responseBuilder = Response.ok(bytes);
         responseBuilder.header("Content-Disposition", "inline; filename=\"" + filename + "\"")
                 .header("Content-Type", "image/jpeg");
-        System.out.println("Downloading thumbnail productID=" + id +
+        System.out.println("Downloading thumbnail productID=" + productID +
                 " filename = " + filename + " size=" + bytes.length);
         return responseBuilder.build();
     }
 
     /**
      * Возвращает полноразмерное изображение товара
-     * @param id товарной позиции
+     * @param productID товарной позиции
      * @return полноразмерное изображение (image/jpeg)
      */
     @GET
     @Path("/downloadImage")
-    public Response downloadImage(@QueryParam("id") int id) {
-        ProductImage productImage = catalogue.getProductImage(id);
-        if (productImage==null) return Response.status(HTTP_NOT_FOUND, "imageID=" + id + " not found").build();
+    public Response downloadImage(@QueryParam("productID") int productID) {
+        ProductImage productImage = catalogue.getProductImage(productID);
+        if (productImage==null) return Response.status(HTTP_NOT_FOUND, "imageID=" + productID + " not found").build();
         byte[] imageBytes = productImage.getImage();
         String filename = productImage.getFilename();
         Response.ResponseBuilder responseBuilder = Response.ok(imageBytes);
         responseBuilder.header("Content-Disposition", "inline; filename=\"" + filename + "\"")
                 .header("Content-Type", "image/jpeg");
-        System.out.println("Downloading image of productID=" + id +
+        System.out.println("Downloading image of productID=" + productID +
                 " filename = " + filename + " size=" + imageBytes.length);
         return responseBuilder.build();
     }
