@@ -8,6 +8,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
+import java.math.BigInteger;
 import java.util.List;
 
 /**
@@ -96,6 +97,28 @@ public class Catalogue {
         managedEntity.setTimestamp(System.currentTimeMillis());
         entityManager.persist(managedEntity);
         return product;
+    }
+
+    /**
+     * Удаляет товарную позицию если с ней не связано заказов и транзакций
+     * @param productID товарной позиции
+     * @return true если удалена, false если не удалена (нет такого продукта или товарная позиция используется)
+     */
+    @Transactional
+    public boolean removeProduct(int productID) {
+        Product product = entityManager.find(Product.class, productID);
+        if (product==null) return false;
+        // Если хоть где-то используется в заказах или транзакциях нельзя удалять
+        String sqlQuery = "SELECT " +
+                "(SELECT COUNT(*) FROM SalesOrderEntry WHERE SalesOrderEntry.productID=" + productID + ") +" +
+                "(SELECT COUNT(*) FROM StockTransaction WHERE StockTransaction.productID=" + productID + ")";
+        BigInteger usageCount = (BigInteger) entityManager.createNativeQuery(sqlQuery).getSingleResult();
+        if (usageCount.longValue() > 0) return false;
+        // Если нигде не используется тогда удаляем связанные данные: изображения и складские карточки
+        entityManager.createQuery("DELETE FROM ProductImage a WHERE a.productID=" + productID).executeUpdate();
+        entityManager.createQuery("DELETE FROM StockInformation a WHERE a.productID=" + productID).executeUpdate();
+        entityManager.remove(product);
+        return true;
     }
 
     /**
