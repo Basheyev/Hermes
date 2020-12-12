@@ -9,6 +9,8 @@ import static org.hamcrest.CoreMatchers.is;
 @QuarkusTest
 public class CatalogueResetTest {
 
+    // todo Написать тесты на все API
+
     @Test
     public void catalogueResetTest() {
         given()
