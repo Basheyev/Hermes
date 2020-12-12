@@ -14,6 +14,7 @@ import javax.transaction.Transactional;
 import java.util.List;
 
 // todo Добавить работу с транзакциями (в том числе выборка за время)
+// todo Добавить постраничный вывод
 // todo добавить логирование и обработку исключений
 // todo Available to promise
 @ApplicationScoped

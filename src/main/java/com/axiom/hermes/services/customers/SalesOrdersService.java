@@ -92,7 +92,7 @@ public class SalesOrdersService {
     @GET
     @Path("/addOrderEntry")
     public Response addOrderEntry(
-            @QueryParam("entryID") long orderID,
+            @QueryParam("orderID") long orderID,
             @QueryParam("productID") int productID,
             @QueryParam("amount") int amount) {
         SalesOrderEntry entry = salesOrders.addOrderEntry(orderID, productID, amount);
@@ -113,7 +113,7 @@ public class SalesOrdersService {
 
     @GET
     @Path("/removeOrderEntry")
-    public Response removeOrderEntry(long entryID) {
+    public Response removeOrderEntry(@QueryParam("entryID") long entryID) {
         boolean result = salesOrders.removeOrderEntry(entryID);
         if (!result) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok().build();

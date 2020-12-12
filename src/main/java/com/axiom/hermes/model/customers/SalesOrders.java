@@ -103,6 +103,7 @@ public class SalesOrders {
 
     @Transactional
     public SalesOrderEntry addOrderEntry(long orderID, int productID, int amount) {
+        // todo учитывать случай когда такая позиция уже есть и пытаются добавит еще такую же
         SalesOrder salesOrder = getOrder(orderID);
         if (salesOrder==null) return null;
         Product product = catalogue.getProduct(productID);
