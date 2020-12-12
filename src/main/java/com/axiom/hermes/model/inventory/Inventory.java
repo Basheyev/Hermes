@@ -13,8 +13,8 @@ import javax.persistence.LockModeType;
 import javax.transaction.Transactional;
 import java.util.List;
 
-// todo Добавить работу с транзакциями
-// todo добавить логирование
+// todo Добавить работу с транзакциями (в том числе выборка за время)
+// todo добавить логирование и обработку исключений
 // todo Available to promise
 @ApplicationScoped
 public class Inventory {

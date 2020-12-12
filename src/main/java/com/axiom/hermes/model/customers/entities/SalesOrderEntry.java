@@ -19,6 +19,13 @@ public class SalesOrderEntry {
 
     public SalesOrderEntry() { }
 
+    public SalesOrderEntry(long orderID, int productID, int amount, double price) {
+        this.orderID = orderID;
+        this.productID = productID;
+        this.amount = amount;
+        this.price = price;
+    }
+
     public long getEntryID() {
         return entryID;
     }

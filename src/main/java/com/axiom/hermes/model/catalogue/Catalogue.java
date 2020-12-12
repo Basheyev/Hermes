@@ -12,7 +12,7 @@ import java.util.List;
 
 /**
  * Каталог товаров
- * todo добавить логирование
+ * todo добавить логирование и обработку исключений
  */
 @ApplicationScoped
 public class Catalogue {
@@ -52,15 +52,14 @@ public class Catalogue {
 
     /**
      * Возвращает карточку товарной позиции по указаному ID
-     * @param id товарной позиции
+     * @param productID товарной позиции
      * @return карточка товарной позиции
      */
     @Transactional
-    public Product getProduct(int id) {
-        String query = "SELECT a FROM Product a WHERE a.productID=" + id;
-        List<Product> result = entityManager.createQuery(query, Product.class).getResultList();
-        if (result.size() > 0) return result.get(0);
-        return null;
+    public Product getProduct(int productID) {
+        Product product = entityManager.find(Product.class, productID);
+        if (product==null) return null;
+        return product;
     }
 
     /**
