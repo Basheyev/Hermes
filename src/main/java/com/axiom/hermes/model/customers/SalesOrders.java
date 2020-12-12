@@ -12,6 +12,7 @@ import javax.persistence.LockModeType;
 import javax.transaction.Transactional;
 import java.util.List;
 
+// todo получить постраничный перечень заказов со статусами (фильтры по времени)
 // todo прокомментировать код
 // todo добавить логирование и обработку исключений
 
@@ -28,7 +29,15 @@ public class SalesOrders {
     Catalogue catalogue;
 
 
-    // Получить заказы за время
+    @Transactional
+    public List<SalesOrder> getAllOrders() {
+        List<SalesOrder> customerOrders;
+        String query = "SELECT a FROM SalesOrder a";
+        customerOrders = entityManager.createQuery(query, SalesOrder.class).getResultList();
+        return customerOrders;
+    }
+
+
     @Transactional
     public List<SalesOrder> getOrders(int customerID, int status) {
         List<SalesOrder> customerOrders;
@@ -44,7 +53,7 @@ public class SalesOrders {
 
 
     @Transactional
-    public SalesOrder createOrder(int customerID) {
+    public SalesOrder addOrder(int customerID) {
         SalesOrder salesOrder = new SalesOrder(customerID);
         entityManager.persist(salesOrder);
         return salesOrder;
@@ -56,16 +65,16 @@ public class SalesOrders {
     }
 
     @Transactional
-    public boolean changeStatus(long orderID, int status) {
+    public SalesOrder changeStatus(long orderID, int status) {
         SalesOrder salesOrder = entityManager.find(SalesOrder.class, orderID, LockModeType.PESSIMISTIC_WRITE);
-        if (salesOrder==null) return false;
+        if (salesOrder==null) return null;
         salesOrder.setStatus(status);
         entityManager.persist(salesOrder);
-        return true;
+        return salesOrder;
     }
 
     @Transactional
-    public boolean deleteOrder(long orderID) {
+    public boolean removeOrder(long orderID) {
         SalesOrder salesOrder = entityManager.find(SalesOrder.class, orderID, LockModeType.PESSIMISTIC_WRITE);
         if (salesOrder==null) return false;
         if (salesOrder.getStatus() != SalesOrder.STATUS_NEW) return false;
@@ -122,7 +131,7 @@ public class SalesOrders {
     }
 
     @Transactional
-    public boolean removeEntry(long entryID) {
+    public boolean removeOrderEntry(long entryID) {
         SalesOrderEntry entry = entityManager.find(SalesOrderEntry.class, entryID);
         if (entry==null) return false;
         entityManager.remove(entry);
