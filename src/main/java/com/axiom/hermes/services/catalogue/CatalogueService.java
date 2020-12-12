@@ -106,6 +106,14 @@ public class CatalogueService {
         return Response.ok().build();
     }
 
+    @GET
+    @Path("/removeProduct")
+    public Response removeProduct(@QueryParam("productID") int productID) {
+        boolean result = catalogue.removeProduct(productID);
+        if (!result) return Response.status(Response.Status.FORBIDDEN).build();
+        return Response.ok().build();
+    }
+
     /**
      * Возвращает миниатюру изображения вписанную в размер 128x128
      * @param id товарной позиции
