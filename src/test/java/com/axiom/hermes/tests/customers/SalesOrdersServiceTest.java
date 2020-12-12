@@ -1,4 +1,4 @@
-package com.axiom;
+package com.axiom.hermes.tests.customers;
 
 import org.jboss.logging.Logger;
 import io.quarkus.test.junit.QuarkusTest;
@@ -16,9 +16,9 @@ import static org.hamcrest.Matchers.*;
 
 @QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class SalesOrdersTest {
+public class SalesOrdersServiceTest {
 
-    private static final Logger LOG = Logger.getLogger(SalesOrdersTest.class);
+    private static final Logger LOG = Logger.getLogger(SalesOrdersServiceTest.class);
 
     private static int addedOrderID;
     private static int addedEntryID;
@@ -96,6 +96,11 @@ public class SalesOrdersTest {
         then().statusCode(200).assertThat()
                 .body("orderID", equalTo(addedOrderID))       // Проверяем что orderID > 0
                 .body("status", equalTo(2));           // Проверям что status=1 (новый заказ)
+        given().
+                when().get("/salesOrders/changeStatus?orderID=" + addedOrderID + "&status=1").
+                then().statusCode(200).assertThat()
+                .body("orderID", equalTo(addedOrderID))       // Проверяем что orderID > 0
+                .body("status", equalTo(1));           // Проверям что status=1 (новый заказ)
     }
 
 

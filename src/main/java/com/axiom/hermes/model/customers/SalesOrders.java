@@ -77,6 +77,7 @@ public class SalesOrders {
     public boolean removeOrder(long orderID) {
         SalesOrder salesOrder = entityManager.find(SalesOrder.class, orderID, LockModeType.PESSIMISTIC_WRITE);
         if (salesOrder==null) return false;
+        // fixme надо как-то сообщать что при таком статусе удалять нельзя
         if (salesOrder.getStatus() != SalesOrder.STATUS_NEW) return false;
         String query = "DELETE FROM SalesOrderEntry a WHERE a.orderID=" + salesOrder.getOrderID();
         entityManager.createQuery(query).executeUpdate();
@@ -103,6 +104,7 @@ public class SalesOrders {
 
     @Transactional
     public SalesOrderEntry addOrderEntry(long orderID, int productID, int amount) {
+        // todo timestamp ордера не обновляется
         // todo учитывать случай когда такая позиция уже есть и пытаются добавит еще такую же
         SalesOrder salesOrder = getOrder(orderID);
         if (salesOrder==null) return null;
