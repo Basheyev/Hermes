@@ -1,7 +1,8 @@
-package com.axiom.hermes.model.customers;
+package com.axiom.hermes.model.customers.entities;
 
 /**
  * Карточка клиента
+ * todo реализовать управление клиентами
  */
 public class Customer {
     public int customerID;                    // ID клиента

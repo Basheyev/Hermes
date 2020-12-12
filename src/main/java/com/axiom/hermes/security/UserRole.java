@@ -1,4 +1,4 @@
-package com.axiom.hermes.model.users;
+package com.axiom.hermes.security;
 
 /**
  * Роль пользователя

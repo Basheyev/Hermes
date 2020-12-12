@@ -12,6 +12,7 @@ import java.util.List;
 
 /**
  * Каталог товаров
+ * todo добавить логирование
  */
 @ApplicationScoped
 public class Catalogue {
