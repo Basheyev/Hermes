@@ -103,7 +103,7 @@ public class CatalogueService {
             return Response.status(HTTP_NOT_FOUND,
                    "productID=" + product.getProductID() + " not found").build();
         }
-        return Response.ok().build();
+        return Response.ok(managed).build();
     }
 
     @GET
@@ -203,7 +203,9 @@ public class CatalogueService {
             InputStream inputStream = inputPart.getBody(InputStream.class,null);
             byte[] originalImage = IOUtils.toByteArray(inputStream);
             // Проверка ограничения на размер файла
-            if (originalImage.length > MAX_IMAGE_SIZE) return Response.status(HTTP_REQUEST_TOO_LARGE).build();
+            if (originalImage.length > MAX_IMAGE_SIZE) {
+                return Response.status(HTTP_REQUEST_TOO_LARGE).build();
+            }
             // Формируем миниатюрное изображение 128x128 image/jpeg (до 64Kb)
             ByteArrayOutputStream thumbnailOutput = new ByteArrayOutputStream(MAX_THUMBNAIL_SIZE);
             Thumbnails.of(new ByteArrayInputStream(originalImage))
@@ -225,11 +227,13 @@ public class CatalogueService {
                     " size: " + originalImage.length + " bytes" +
                     " thumbnail size:" + thumbnail.length + " bytes");
 
+            return Response.ok().build();
+
         } catch (Exception e) {
             e.printStackTrace();
             return Response.status(HTTP_INTERNAL_SERVER_ERROR).build();
         }
-        return Response.ok().build();
+
     }
 
 

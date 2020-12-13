@@ -1,15 +1,21 @@
 package com.axiom.hermes.tests.catalogue;
 
-import com.axiom.hermes.tests.customers.SalesOrdersServiceTest;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -17,7 +23,15 @@ public class CatalogueServiceTest {
 
     private static final Logger LOG = Logger.getLogger(CatalogueServiceTest.class);
 
+    private static final String imagePath = "C:\\Development\\Hermes\\testdata\\";
+    public static final String fileName = "shoes.jpg";
+    public static final String changedFileName = "bag.jpg";
+    public static final String bigFileName = "bigimage1.jfif";
+
     private static int productID;
+    private static long imageSize;
+
+    //---------------------------------------------------------------------------------------------------
 
     @Test
     @Order(1)
@@ -28,6 +42,7 @@ public class CatalogueServiceTest {
                 .statusCode(200);
     }
 
+    //---------------------------------------------------------------------------------------------------
 
     @Test
     @Order(2)
@@ -53,6 +68,8 @@ public class CatalogueServiceTest {
         LOG.info("Product created productID=" + productID);
     }
 
+    //---------------------------------------------------------------------------------------------------
+
     @Test
     @Order(3)
     public void getProduct() {
@@ -60,19 +77,171 @@ public class CatalogueServiceTest {
                 given().
                         when().get("/catalogue/getProduct?productID=" + productID).
                         then().statusCode(200).assertThat()
+                        .body("name", equalTo("CUP OF COFFEE"))
                         .body("vendorCode", equalTo("CCMAC"))
                         .body("description", equalTo("MACCOFFEE"))
+                        .body("price", equalTo(5f))
                 .extract().asString();
         LOG.info("Product get: " + response);
     }
 
-    // todo add image
-
-    // todo get thumbnail
-
+    //---------------------------------------------------------------------------------------------------
 
     @Test
     @Order(4)
+    public void updateProduct() {
+        productID =
+                given()
+                        .header("Content-Type", "application/json")
+                        .body("{\n" +
+                                "    \"productID\": " + productID + ",\n" +
+                                "    \"name\": \"CUP OF COFFEE\",\n" +
+                                "    \"description\": \"MACCOFFEE\",\n" +
+                                "    \"price\": 15,\n" +
+                                "    \"vendorCode\": \"CCMAC\"\n" +
+                               // "    \"available\": \"true\"\n" +
+                                "}")
+                .when()
+                        .post("/catalogue/updateProduct")
+                .then()
+                        .statusCode(200)
+                        .assertThat()
+                        .body("name", equalTo("CUP OF COFFEE"))
+                        .body("vendorCode", equalTo("CCMAC"))
+                        .body("description", equalTo("MACCOFFEE"))
+                        .body("price", equalTo(15f))
+                        .body("available", equalTo(false))
+                        .extract().path("productID");
+
+        LOG.info("Product updated productID=" + productID);
+    }
+
+    //---------------------------------------------------------------------------------------------------
+    @Test
+    @Order(5)
+    public void getAvailableProducts() {
+        String body =
+        given()
+        .when()
+               .get("/catalogue")
+        .then().assertThat()
+                .body(containsString("\"available\":true"))         // Содержит доступные товары
+                .body(not(containsString("\"available\":false")))   // Не содержит недоступные товары
+                .statusCode(200).extract().asString();
+        LOG.info("Get Available Product response :" + body);
+    }
+
+    //---------------------------------------------------------------------------------------------------
+
+    @Test
+    @Order(6)
+    public void uploadImage() {
+        File imageFile = new File(imagePath + fileName);
+        imageSize = imageFile.length();
+        given()
+                .multiPart("productID", productID)
+                .multiPart("file", imageFile,"image/jpeg")
+                .accept(ContentType.JSON)
+        .when()
+                .post("/catalogue/uploadImage")
+        .then()
+                .statusCode(200);
+    }
+
+    @Test
+    @Order(7)
+    public void uploadImageChange() {
+        File imageFile = new File(imagePath + changedFileName);
+        imageSize = imageFile.length();
+        given()
+                .multiPart("productID", productID)
+                .multiPart("file", imageFile,"image/jpeg")
+                .accept(ContentType.JSON)
+                .when()
+                .post("/catalogue/uploadImage")
+                .then()
+                .statusCode(200);
+    }
+
+
+    @Test
+    @Order(8)
+    public void uploadImageBigFile() {
+        // Проверяем защиту на большие файлы
+        File bigImageFile = new File(imagePath + bigFileName);
+        given()
+                .multiPart("productID", productID)
+                .multiPart("file", bigImageFile,"image/jpeg")
+                .accept(ContentType.JSON)
+                .when()
+                .post("/catalogue/uploadImage")
+                .then()
+                .assertThat()
+                .statusCode(413);
+    }
+
+    //---------------------------------------------------------------------------------------------------
+
+    @Test
+    @Order(9)
+    public void downloadImage() {
+        File outputImageFile = new File(imagePath + "downloaded_" + changedFileName);
+        if (!outputImageFile.exists()) {
+
+            byte[] image =
+                    given().
+                    when().get("/catalogue/downloadImage?productID=" + productID).
+                    then().statusCode(200).
+                            assertThat().
+                            header("Content-Disposition", containsString(changedFileName)).
+                            header("Content-Type", equalTo("image/jpeg")).
+                            extract().
+                            asByteArray();
+
+            assertTrue(image.length==imageSize);
+            try {
+                OutputStream outStream = new FileOutputStream(outputImageFile);
+                outStream.write(image);
+                outStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------------------------
+
+    @Test
+    @Order(10)
+    public void downloadThumbnail() {
+        File outputImageFile = new File(imagePath + "thumbnail_" + changedFileName);
+        if (!outputImageFile.exists()) {
+
+            byte[] image =
+                    given().
+                            when().get("/catalogue/downloadThumbnail?productID=" + productID).
+                            then().statusCode(200).
+                            assertThat().
+                            header("Content-Disposition", containsString("thumbnail" + productID + ".jpg")).
+                            header("Content-Type", equalTo("image/jpeg")).
+                            extract().
+                            asByteArray();
+
+            assertTrue(image.length > 0);
+            try {
+                OutputStream outStream = new FileOutputStream(outputImageFile);
+                outStream.write(image);
+                outStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    //---------------------------------------------------------------------------------------------------
+
+    @Test
+    @Order(10)
     public void removeProduct() {
         String response =
         given().
@@ -83,7 +252,7 @@ public class CatalogueServiceTest {
                 when().get("/catalogue/getProduct?productID=" + productID).
                 then().statusCode(404).assertThat();
 
-        LOG.info("Product deleted :" + response);
+        LOG.info("Product deleted ProductID=" + productID);
     }
 
 }

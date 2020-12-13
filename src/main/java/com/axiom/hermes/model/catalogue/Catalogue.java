@@ -87,12 +87,16 @@ public class Catalogue {
     public Product updateProduct(Product product) {
         Product managedEntity = entityManager.find(Product.class, product.productID);
         if (managedEntity==null) return null;
+        if (product.getPrice() < 0) return null;
+        if (product.getCategoryID() < 0) return null;
+        // Применять только те значения, которые были указаны (чтобы не затереть имеющиеся)
+        if (product.getVendorCode()!=null) managedEntity.setVendorCode(product.getVendorCode());
+        if (product.getName()!=null) managedEntity.setName(product.getName());
+        if (product.getDescription()!=null) managedEntity.setDescription(product.getDescription());
+        if (product.getUnitOfMeasure()!=null) managedEntity.setUnitOfMeasure(product.getUnitOfMeasure());
+        // Так как сложно тут отследить не указано или указали нулевое значение - просто присваиваем
         managedEntity.setCategoryID(product.getCategoryID());
-        managedEntity.setVendorCode(product.getVendorCode());
-        managedEntity.setName(product.getName());
-        managedEntity.setDescription(product.getDescription());
         managedEntity.setPrice(product.getPrice());
-        managedEntity.setUnitOfMeasure(product.getUnitOfMeasure());
         managedEntity.setAvailable(product.isAvailable());
         managedEntity.setTimestamp(System.currentTimeMillis());
         entityManager.persist(managedEntity);

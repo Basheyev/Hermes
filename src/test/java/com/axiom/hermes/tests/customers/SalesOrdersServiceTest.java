@@ -23,6 +23,8 @@ public class SalesOrdersServiceTest {
     private static int addedOrderID;
     private static int addedEntryID;
 
+    //---------------------------------------------------------------------------------------------------
+
     @Test
     @Order(1)
     public void allOrders() {
@@ -33,6 +35,7 @@ public class SalesOrdersServiceTest {
                 .statusCode(200);
     }
 
+    //---------------------------------------------------------------------------------------------------
 
     @Test
     @Order(2)
@@ -48,6 +51,8 @@ public class SalesOrdersServiceTest {
 
     }
 
+    //---------------------------------------------------------------------------------------------------
+
     @Test
     @Order(3)
     public void getOrder() {
@@ -57,6 +62,8 @@ public class SalesOrdersServiceTest {
                 .body("orderID", equalTo(addedOrderID))       // Проверяем что orderID > 0
                 .body("status", equalTo(1));           // Проверям что status=1 (новый заказ)
     }
+
+    //---------------------------------------------------------------------------------------------------
 
     @Test
     @Order(4)
@@ -70,6 +77,8 @@ public class SalesOrdersServiceTest {
                 .extract().path("entryID");
     }
 
+    //---------------------------------------------------------------------------------------------------
+
     @Test
     @Order(5)
     public void getOrderEntry() {
@@ -80,6 +89,8 @@ public class SalesOrdersServiceTest {
               .body("amount", equalTo(12));
     }
 
+    //---------------------------------------------------------------------------------------------------
+
     @Test
     @Order(6)
     public void removeOrderEntries() {
@@ -87,6 +98,8 @@ public class SalesOrdersServiceTest {
         when().get("/salesOrders/removeOrderEntry?entryID=" + addedEntryID).
         then().statusCode(200);
     }
+
+    //---------------------------------------------------------------------------------------------------
 
     @Test
     @Order(7)
@@ -103,6 +116,7 @@ public class SalesOrdersServiceTest {
                 .body("status", equalTo(1));           // Проверям что status=1 (новый заказ)
     }
 
+    //---------------------------------------------------------------------------------------------------
 
     @Test
     @Order(8)
