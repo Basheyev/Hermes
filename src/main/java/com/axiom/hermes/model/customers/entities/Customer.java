@@ -16,9 +16,9 @@ public class Customer {
     private String mobile;                     // Мобильный номер
     private String businessID;                 // БИН/ИИН клиента
     private String name;                       // Имя клиента (ФИО/ИП/ТОО)
-    private String country;                    // Страна
-    private String city;                       // Город
     private String address;                    // Адрес клиента
+    private String city;                       // Город
+    private String country;                    // Страна
     private boolean verified;                  // Проверенный ли клиент
 
     public Customer() {}
