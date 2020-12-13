@@ -1,17 +1,89 @@
 package com.axiom.hermes.model.customers.entities;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+
 /**
  * Карточка клиента
  * todo реализовать управление клиентами
  */
+@Entity
 public class Customer {
-    public int customerID;                    // ID клиента
-    public String businessID;                 // БИН/ИИН клиента
-    public String mobile;                     // Мобильный номер
-    public String name;                       // Имя клиента
-    public String description;                // Описание клиента
-    public String address;                    // Адрес клиента
-    public double personalAccount;            // Лицевой счёт клиента
-    public byte[] photo;                      // Фотография клиента
-    // tax??
+    @Id @GeneratedValue
+    private int customerID;                    // ID клиента
+    private String mobile;                     // Мобильный номер
+    private String businessID;                 // БИН/ИИН клиента
+    private String name;                       // Имя клиента (ФИО/ИП/ТОО)
+    private String country;                    // Страна
+    private String city;                       // Город
+    private String address;                    // Адрес клиента
+    private boolean verified;                  // Проверенный ли клиент
+
+    public Customer() {}
+
+    public int getCustomerID() {
+        return customerID;
+    }
+
+    public void setCustomerID(int customerID) {
+        this.customerID = customerID;
+    }
+
+    public String getMobile() {
+        return mobile;
+    }
+
+    public void setMobile(String mobile) {
+        this.mobile = mobile;
+    }
+
+    public String getBusinessID() {
+        return businessID;
+    }
+
+    public void setBusinessID(String businessID) {
+        this.businessID = businessID;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public boolean isVerified() {
+        return verified;
+    }
+
+    public void setVerified(boolean verified) {
+        this.verified = verified;
+    }
 }
