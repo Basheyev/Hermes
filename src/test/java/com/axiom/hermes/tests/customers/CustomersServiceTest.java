@@ -27,4 +27,6 @@ public class CustomersServiceTest {
         .extract().asString();
         LOG.info(response);
     }
+
+    // todo добавить тесты и на другие методы
 }
