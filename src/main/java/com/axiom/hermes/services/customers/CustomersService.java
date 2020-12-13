@@ -1,5 +1,6 @@
 package com.axiom.hermes.services.customers;
 
+import com.axiom.hermes.model.catalogue.entities.Product;
 import com.axiom.hermes.model.customers.Customers;
 import com.axiom.hermes.model.customers.entities.Customer;
 import com.axiom.hermes.model.customers.entities.SalesOrder;
@@ -10,6 +11,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
 
+/**
+ * Сервис управления клиентами
+ */
 @Path("/customers")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -23,6 +27,14 @@ public class CustomersService {
         List<Customer> allCustomers = customers.getAllCustomers();
         if (allCustomers==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(allCustomers).build();
+    }
+
+    @POST
+    @Path("/addCustomer")
+    public Response addCustomer(Customer newCustomer) {
+        Customer customer = customers.addCustomer(newCustomer);
+        if (customer==null) return Response.status(Response.Status.FORBIDDEN).build();
+        return Response.ok(customer).build();
     }
 
     @GET
@@ -41,25 +53,21 @@ public class CustomersService {
         return Response.ok(customer).build();
     }
 
-    @POST
-    @Path("/addCustomer")
-    public Response addCustomer(Customer customer) {
-        // todo реализовать добавление пользователя
-        return Response.status(Response.Status.NOT_FOUND).build();
-    }
-
     @GET
     @Path("/updateCustomer")
     public Response updateCustomer(Customer customer) {
-        // todo реализовать редактирование пользователя
-        return Response.status(Response.Status.NOT_FOUND).build();
+        Customer managed = customers.getCustomer(customer.getCustomerID());
+        if (managed==null) return Response.status(Response.Status.NOT_FOUND).build();
+        return Response.ok(managed).build();
     }
 
     @GET
     @Path("/removeCustomer")
     public Response removeCustomer(@QueryParam("customerID")int customerID) {
-        // todo реализовать удаление пользователя
-        return Response.status(Response.Status.NOT_FOUND).build();
+        if (!customers.removeCustomer(customerID)) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        return Response.ok().build();
     }
 
 }

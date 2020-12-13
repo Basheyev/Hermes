@@ -13,7 +13,9 @@ import javax.ws.rs.QueryParam;
 import java.math.BigInteger;
 import java.util.List;
 
-// TODO Добавлять, редактировать, удалять клиентов
+/**
+ * Управление клиентами
+ */
 @ApplicationScoped
 public class Customers {
 
