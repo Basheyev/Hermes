@@ -5,6 +5,7 @@ import com.axiom.hermes.model.catalogue.entities.Product;
 import com.axiom.hermes.model.catalogue.entities.ProductImage;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.commons.io.IOUtils;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
@@ -25,9 +26,11 @@ import java.util.Map;
 @Consumes(MediaType.APPLICATION_JSON)
 public class CatalogueService {
 
-    public static final int MAX_IMAGE_SIZE = 512 * 1024;    // 512Kb
-    public static final int MAX_THUMBNAIL_SIZE = 0xFFFF;    // 65Kb
-    public static final int MAX_THUMBNAIL_DIMENSION = 128;  // 128x128px
+    private static final Logger LOG = Logger.getLogger(Catalogue.class);
+
+    public static final int MAX_IMAGE_SIZE = 512 * 1024;      // 512Kb
+    public static final int MAX_THUMBNAIL_SIZE = 0xFFFF;      // 65Kb
+    public static final int MAX_THUMBNAIL_DIMENSION = 128;    // 128x128px
 
     public static final int INVALID = -1;
     public static final int HTTP_BAD_REQUEST = 400;
@@ -124,15 +127,17 @@ public class CatalogueService {
     public Response downloadThumbnail(@QueryParam("productID") int productID) {
         byte[] bytes = catalogue.getProductThumbnail(productID);
         if (bytes==null) {
-            System.out.println("Thumbnail of productID=" + productID + " not found");
+            LOG.info("Thumbnail image of productID=" + productID + " is not found.");
             return Response.status(HTTP_NOT_FOUND, "productID=" + productID + " not found").build();
         }
         String filename = "thumbnail" + productID + ".jpg";
         Response.ResponseBuilder responseBuilder = Response.ok(bytes);
         responseBuilder.header("Content-Disposition", "inline; filename=\"" + filename + "\"")
                 .header("Content-Type", "image/jpeg");
-        System.out.println("Downloading thumbnail productID=" + productID +
-                " filename = " + filename + " size=" + bytes.length);
+
+        LOG.info("Downloading thumbnail image of productID=" + productID +
+                " filename = \"" + filename + "\" size=" + bytes.length + " bytes.");
+
         return responseBuilder.build();
     }
 
@@ -151,8 +156,9 @@ public class CatalogueService {
         Response.ResponseBuilder responseBuilder = Response.ok(imageBytes);
         responseBuilder.header("Content-Disposition", "inline; filename=\"" + filename + "\"")
                 .header("Content-Type", "image/jpeg");
-        System.out.println("Downloading image of productID=" + productID +
-                " filename = " + filename + " size=" + imageBytes.length);
+
+        LOG.info("Downloading image of productID=" + productID +
+                " filename = \"" + filename + "\" size=" + imageBytes.length + " bytes.");
         return responseBuilder.build();
     }
 
@@ -220,8 +226,8 @@ public class CatalogueService {
                 return Response.status(HTTP_NOT_FOUND, "productID=" + productID + " not found").build();
             }
 
-            System.out.println(
-                    "PRODUCT IMAGE UPLOADED:" +
+            LOG.info(
+                    "Image uploaded" +
                     " ProductID=" + productID +
                     " filename=\"" + fileName + "\"" +
                     " size: " + originalImage.length + " bytes" +

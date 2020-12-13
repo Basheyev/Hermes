@@ -3,6 +3,7 @@ package com.axiom.hermes.model.catalogue;
 import com.axiom.hermes.model.catalogue.entities.Product;
 import com.axiom.hermes.model.catalogue.entities.ProductImage;
 import com.axiom.hermes.model.inventory.Inventory;
+import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -13,7 +14,7 @@ import java.util.List;
 
 /**
  * Каталог товаров
- * todo добавить логирование и обработку исключений
+ * todo передавать изображение потоково, не загружая в память
  */
 @ApplicationScoped
 public class Catalogue {

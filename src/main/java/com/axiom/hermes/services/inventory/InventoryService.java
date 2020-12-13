@@ -32,7 +32,7 @@ public class InventoryService {
 
     @GET
     @Path("/purchase")
-    public Response purchase(@QueryParam("id") int productID,
+    public Response purchase(@QueryParam("productID") int productID,
                              @QueryParam("amount") int amount,
                              @QueryParam("price") double price) {
         StockTransaction purchase = inventory.purchase(productID, amount, price);
@@ -42,7 +42,7 @@ public class InventoryService {
 
     @GET
     @Path("/saleReturn")
-    public Response saleReturn(@QueryParam("id") int productID,
+    public Response saleReturn(@QueryParam("productID") int productID,
                                @QueryParam("amount") int amount,
                                @QueryParam("price") double price) {
         StockTransaction saleReturn = inventory.saleReturn(productID, amount, price);
@@ -52,7 +52,7 @@ public class InventoryService {
 
     @GET
     @Path("/sale")
-    public Response sale(@QueryParam("id") int productID,
+    public Response sale(@QueryParam("productID") int productID,
                          @QueryParam("amount") int amount,
                          @QueryParam("price") double price) {
         StockTransaction sale = inventory.sale(productID, amount, price);
@@ -62,7 +62,7 @@ public class InventoryService {
 
     @GET
     @Path("/purchaseReturn")
-    public Response purchaseReturn(@QueryParam("id") int productID,
+    public Response purchaseReturn(@QueryParam("productID") int productID,
                                    @QueryParam("amount") int amount,
                                    @QueryParam("price") double price) {
         StockTransaction purchaseReturn = inventory.purchaseReturn(productID, amount, price);
@@ -72,7 +72,7 @@ public class InventoryService {
 
     @GET
     @Path("/writeOff")
-    public Response writeOff(@QueryParam("id") int productID,
+    public Response writeOff(@QueryParam("productID") int productID,
                              @QueryParam("amount") int amount,
                              @QueryParam("price") double price) {
         StockTransaction writeOff = inventory.writeOff(productID, amount, price);
@@ -82,7 +82,7 @@ public class InventoryService {
 
     @GET
     @Path("/getStockInformation")
-    public Response getStockInformation(@QueryParam("id") int productID) {
+    public Response getStockInformation(@QueryParam("productID") int productID) {
         StockInformation stockInfo = inventory.getStockInformation(productID);
         if (stockInfo==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(stockInfo).build();
