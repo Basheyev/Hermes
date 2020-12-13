@@ -7,7 +7,6 @@ import javax.persistence.Id;
 
 /**
  * Карточка клиента
- * todo реализовать управление клиентами
  */
 @Entity
 public class Customer {
