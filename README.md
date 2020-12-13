@@ -1,4 +1,4 @@
-# hermes project
+# Hermes - wholesale and distribution REST API
 
 This project uses Quarkus, the Supersonic Subatomic Java Framework.
 
