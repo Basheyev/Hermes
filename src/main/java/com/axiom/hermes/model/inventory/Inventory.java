@@ -13,10 +13,10 @@ import javax.persistence.LockModeType;
 import javax.transaction.Transactional;
 import java.util.List;
 
-// todo Добавить работу с транзакциями (в том числе выборка за время)
-// todo Добавить постраничный вывод
+// todo Добавить учёт заказа по которому происходит движение
+// todo Добавить постраничный вывод транзакций с фильтрами по времени и полям
 // todo добавить логирование и обработку исключений
-// todo Available to promise
+// todo сделать расчёт CommittedStock & AvailableForSale
 @ApplicationScoped
 public class Inventory {
 
@@ -209,11 +209,15 @@ public class Inventory {
         if (stockInfo==null) return false;
 
         long newBalance = stockInfo.getStockOnHand() - amount;
+
+        // todo Учитывать available for sale
         if (newBalance < 0) return false;
         stockInfo.setStockOnHand(newBalance);
         entityManager.persist(stockInfo);
 
         return true;
     }
+
+    // todo сделать бронирование
 
 }

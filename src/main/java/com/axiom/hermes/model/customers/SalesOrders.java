@@ -61,6 +61,7 @@ public class SalesOrders {
 
     @Transactional
     public SalesOrder getOrder(long orderID) {
+        if (orderID<0) return null;
         return entityManager.find(SalesOrder.class, orderID);
     }
 
@@ -69,6 +70,7 @@ public class SalesOrders {
         SalesOrder salesOrder = entityManager.find(SalesOrder.class, orderID, LockModeType.PESSIMISTIC_WRITE);
         if (salesOrder==null) return null;
         salesOrder.setStatus(status);
+        // todo сделать бронирование остатков
         entityManager.persist(salesOrder);
         return salesOrder;
     }
@@ -78,6 +80,7 @@ public class SalesOrders {
         SalesOrder salesOrder = entityManager.find(SalesOrder.class, orderID, LockModeType.PESSIMISTIC_WRITE);
         if (salesOrder==null) return false;
         // fixme надо как-то сообщать что при таком статусе удалять нельзя
+        // todo Проверять есть ли транзакции с таким ордеров
         if (salesOrder.getStatus() != SalesOrder.STATUS_NEW) return false;
         String query = "DELETE FROM SalesOrderEntry a WHERE a.orderID=" + salesOrder.getOrderID();
         entityManager.createQuery(query).executeUpdate();

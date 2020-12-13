@@ -14,7 +14,6 @@ import java.util.List;
 
 /**
  * Каталог товаров
- * todo передавать изображение потоково, не загружая в память
  */
 @ApplicationScoped
 public class Catalogue {
