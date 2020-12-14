@@ -5,7 +5,7 @@ import io.quarkus.runtime.annotations.QuarkusMain;
 
 
 // Examples: https://github.com/shopizer-ecommerce
-
+// todo добавить индексы к сущностям
 /**
  * Профиль нагрузки примерно следующий:
  * 1. Дистрибьютор имеет до 10 пользователей

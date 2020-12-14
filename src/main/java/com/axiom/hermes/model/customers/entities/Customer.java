@@ -1,9 +1,6 @@
 package com.axiom.hermes.model.customers.entities;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 /**
  * Карточка клиента
@@ -12,7 +9,9 @@ import javax.persistence.Id;
 public class Customer {
     @Id @GeneratedValue
     private int customerID;                    // ID клиента
+    // todo добавить индекс
     private String mobile;                     // Мобильный номер
+    // todo добавить индекс
     private String businessID;                 // БИН/ИИН клиента
     private String name;                       // Имя клиента (ФИО/ИП/ТОО)
     private String address;                    // Адрес клиента

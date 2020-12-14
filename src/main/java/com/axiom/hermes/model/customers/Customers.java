@@ -9,7 +9,6 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
-import javax.ws.rs.QueryParam;
 import java.math.BigInteger;
 import java.util.List;
 
@@ -22,6 +21,10 @@ public class Customers {
     @Inject
     EntityManager entityManager;
 
+    /**
+     * Получит список всех клиентов
+     * @return список карточек клиентов
+     */
     @Transactional
     public List<Customer> getAllCustomers() {
         List<Customer> customers;
@@ -30,12 +33,22 @@ public class Customers {
         return customers;
     }
 
+    /**
+     * Получить карточку клиента
+     * @param customerID карточки клиента
+     * @return карточка клиента
+     */
     @Transactional
     public Customer getCustomer(int customerID) {
         if (customerID < 0) return null;
         return entityManager.find(Customer.class, customerID);
     }
 
+    /**
+     * Получить карточку клиента по мобильному телефону
+     * @param mobile мобильный номер
+     * @return карточка клиента
+     */
     @Transactional
     public Customer getCustomerByMobile(String mobile) {
         if (mobile==null) return null;
@@ -49,6 +62,11 @@ public class Customers {
         return customer;
     }
 
+    /**
+     * Добавить нового клиента
+     * @param customer карточка клиента
+     * @return добавленная карточа клиента
+     */
     @Transactional
     public Customer addCustomer(Customer customer) {
         if (customer==null) return null;
@@ -58,6 +76,11 @@ public class Customers {
         return customer;
     }
 
+    /**
+     * Изменить данные карточки клиента
+     * @param customer карточка клиента с измененными полями
+     * @return измененная карточка клиента или null если карточка клиента не найдена
+     */
     @Transactional
     public Customer updateCustomer(Customer customer) {
         if (customer==null) return null;
@@ -74,6 +97,11 @@ public class Customers {
         return customer;
     }
 
+    /**
+     * Удалить карточку клиента если у него нет заказов
+     * @param customerID карточки клиента
+     * @return true если удален, false если не найден или есть заказы с его участием
+     */
     @Transactional
     public boolean removeCustomer(int customerID) {
         // Ищем такого клиента

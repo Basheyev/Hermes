@@ -24,6 +24,8 @@ public class StockTransaction {
     public static final int REGRADE = 30;                // Пересорт товара (приход/расход)
     //-------------------------------------------------------------------------------------
 
+    // TODO Добавить индексы по ключевым полям поиска
+
     @Id
     @GeneratedValue
     public long transactionID;       // код транзакции
