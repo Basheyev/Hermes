@@ -109,7 +109,7 @@ public class Customers {
         if (customer==null) return false;
         // Если у клиента есть хотя бы один заказ - удалять нельзя
         String query = "SELECT COUNT(a.customerID) FROM SalesOrder a WHERE a.customerID=" + customerID;
-        long ordersCount = ((BigInteger) entityManager.createQuery(query).getSingleResult()).longValue();
+        long ordersCount = (Long) entityManager.createQuery(query).getSingleResult();
         if (ordersCount > 0) return false;
         entityManager.remove(customer);
         return true;

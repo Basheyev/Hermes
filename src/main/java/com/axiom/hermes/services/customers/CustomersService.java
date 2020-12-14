@@ -53,10 +53,10 @@ public class CustomersService {
         return Response.ok(customer).build();
     }
 
-    @GET
+    @POST
     @Path("/updateCustomer")
     public Response updateCustomer(Customer customer) {
-        Customer managed = customers.getCustomer(customer.getCustomerID());
+        Customer managed = customers.updateCustomer(customer);
         if (managed==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(managed).build();
     }
