@@ -1,13 +1,15 @@
 package com.axiom.hermes.model.customers.entities;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 /**
  * Позиция заказа клиента
  */
 @Entity
+@Table(indexes = {
+    @Index(columnList = "orderID"),
+    @Index(name = "multiIndex", columnList = "orderID, productID")
+})
 public class SalesOrderEntry {
     @Id @GeneratedValue
     private long entryID;                    // Счётчик позиции

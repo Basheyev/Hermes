@@ -32,50 +32,55 @@ public class InventoryService {
 
     @GET
     @Path("/purchase")
-    public Response purchase(@QueryParam("productID") int productID,
+    public Response purchase(@QueryParam("orderID") long orderID,
+                             @QueryParam("productID") int productID,
                              @QueryParam("amount") int amount,
                              @QueryParam("price") double price) {
-        StockTransaction purchase = inventory.purchase(productID, amount, price);
+        StockTransaction purchase = inventory.purchase(orderID, productID, amount, price);
         if (purchase==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(purchase).build();
     }
 
     @GET
     @Path("/saleReturn")
-    public Response saleReturn(@QueryParam("productID") int productID,
+    public Response saleReturn(@QueryParam("orderID") long orderID,
+                               @QueryParam("productID") int productID,
                                @QueryParam("amount") int amount,
                                @QueryParam("price") double price) {
-        StockTransaction saleReturn = inventory.saleReturn(productID, amount, price);
+        StockTransaction saleReturn = inventory.saleReturn(orderID, productID, amount, price);
         if (saleReturn==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(saleReturn).build();
     }
 
     @GET
     @Path("/sale")
-    public Response sale(@QueryParam("productID") int productID,
+    public Response sale(@QueryParam("orderID") long orderID,
+                         @QueryParam("productID") int productID,
                          @QueryParam("amount") int amount,
                          @QueryParam("price") double price) {
-        StockTransaction sale = inventory.sale(productID, amount, price);
+        StockTransaction sale = inventory.sale(orderID, productID, amount, price);
         if (sale==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(sale).build();
     }
 
     @GET
     @Path("/purchaseReturn")
-    public Response purchaseReturn(@QueryParam("productID") int productID,
+    public Response purchaseReturn(@QueryParam("orderID") long orderID,
+                                   @QueryParam("productID") int productID,
                                    @QueryParam("amount") int amount,
                                    @QueryParam("price") double price) {
-        StockTransaction purchaseReturn = inventory.purchaseReturn(productID, amount, price);
+        StockTransaction purchaseReturn = inventory.purchaseReturn(orderID, productID, amount, price);
         if (purchaseReturn==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(purchaseReturn).build();
     }
 
     @GET
     @Path("/writeOff")
-    public Response writeOff(@QueryParam("productID") int productID,
+    public Response writeOff(@QueryParam("orderID") long orderID,
+                             @QueryParam("productID") int productID,
                              @QueryParam("amount") int amount,
                              @QueryParam("price") double price) {
-        StockTransaction writeOff = inventory.writeOff(productID, amount, price);
+        StockTransaction writeOff = inventory.writeOff(orderID, productID, amount, price);
         if (writeOff==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(writeOff).build();
     }

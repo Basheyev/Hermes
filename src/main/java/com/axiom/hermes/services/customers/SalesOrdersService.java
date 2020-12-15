@@ -25,8 +25,10 @@ public class SalesOrdersService {
     public SalesOrdersService() { }
 
     @GET
-    public Response getAllOrders(@QueryParam("start") long startTime, @QueryParam("finish") long finishTime) {
-        List<SalesOrder> orders = salesOrders.getAllOrders(startTime, finishTime);
+    public Response getAllOrders(@QueryParam("start") long startTime,
+                                 @QueryParam("finish") long finishTime,
+                                 @QueryParam("status") int status) {
+        List<SalesOrder> orders = salesOrders.getAllOrders(startTime, finishTime, status);
         if (orders==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(orders).build();
     }

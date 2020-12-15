@@ -13,10 +13,11 @@ import javax.persistence.LockModeType;
 import javax.transaction.Transactional;
 import java.util.List;
 
-// todo Добавить учёт заказа по которому происходит движение
-// todo Добавить постраничный вывод транзакций с фильтрами по времени и полям
+// todo Добавить работу с транзакциями:
+//  а) получить все транзакции по конкретному заказу клиента
+//  б) получить транзакции за время по товарной позиции за время
+// todo сделать учёт CommittedStock & AvailableForSale
 // todo добавить логирование и обработку исключений
-// todo сделать расчёт CommittedStock & AvailableForSale
 @ApplicationScoped
 public class Inventory {
 
@@ -47,9 +48,10 @@ public class Inventory {
      * @return true - если проведена, false - если нет
      */
     @Transactional
-    public StockTransaction purchase(int productID, int amount, double price) {
+    public StockTransaction purchase(long orderID, int productID, int amount, double price) {
+        if (orderID < 0) return null;
         if (!debitProductStock(productID, amount)) return null;
-        StockTransaction purchaseTransaction = new StockTransaction(productID,
+        StockTransaction purchaseTransaction = new StockTransaction(orderID, productID,
                 StockTransaction.SIDE_DEBIT,
                 StockTransaction.DEBIT_PURCHASE,
                 amount, price);
@@ -66,9 +68,9 @@ public class Inventory {
      * @return true - если проведена, false - если нет
      */
     @Transactional
-    public StockTransaction saleReturn(int productID, int amount, double price) {
+    public StockTransaction saleReturn(long orderID, int productID, int amount, double price) {
         if (!debitProductStock(productID, amount)) return null;
-        StockTransaction saleReturnTransaction = new StockTransaction(productID,
+        StockTransaction saleReturnTransaction = new StockTransaction(orderID, productID,
                 StockTransaction.SIDE_DEBIT,
                 StockTransaction.DEBIT_SALE_RETURN,
                 amount, price);
@@ -84,9 +86,9 @@ public class Inventory {
      * @return true - если проведена, false - если нет товара
      */
     @Transactional
-    public StockTransaction sale(int productID, int amount, double price) {
+    public StockTransaction sale(long orderID, int productID, int amount, double price) {
         if (!creditProductStock(productID, amount)) return null;
-        StockTransaction saleTransaction = new StockTransaction(productID,
+        StockTransaction saleTransaction = new StockTransaction(orderID, productID,
                 StockTransaction.SIDE_CREDIT,
                 StockTransaction.CREDIT_SALE,
                 amount, price);
@@ -102,9 +104,9 @@ public class Inventory {
      * @return true - если проведена, false - если нет
      */
     @Transactional
-    public StockTransaction purchaseReturn(int productID, int amount, double price) {
+    public StockTransaction purchaseReturn(long orderID, int productID, int amount, double price) {
         if (!creditProductStock(productID, amount)) return null;
-        StockTransaction purchaseReturnTransaction = new StockTransaction(productID,
+        StockTransaction purchaseReturnTransaction = new StockTransaction(orderID, productID,
                 StockTransaction.SIDE_CREDIT,
                 StockTransaction.CREDIT_PURCHASE_RETURN,
                 amount, price);
@@ -121,9 +123,9 @@ public class Inventory {
      * @return true - если проведена, false - если нет
      */
     @Transactional
-    public StockTransaction writeOff(int productID, int amount, double price) {
+    public StockTransaction writeOff(long orderID, int productID, int amount, double price) {
         if (!creditProductStock(productID, amount)) return null;
-        StockTransaction writeOffTransaction = new StockTransaction(productID,
+        StockTransaction writeOffTransaction = new StockTransaction(orderID, productID,
                 StockTransaction.SIDE_CREDIT,
                 StockTransaction.CREDIT_WRITE_OFF,
                 amount, price);
@@ -218,6 +220,10 @@ public class Inventory {
         return true;
     }
 
-    // todo сделать бронирование
+    // todo Добавить вытащить транзакции по указанному Заказу
+
+    // todo сделать бронирование остатков на основе заказа и пересчитать CommittedStock & AvailableForSale
+
+    // todo определить уровень исполнения заказа (по номеру OrderID и фактическим транзакциям)
 
 }

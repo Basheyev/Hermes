@@ -1,19 +1,26 @@
 package com.axiom.hermes.model.inventory.entities;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 /**
  * Транзакция на складе
  */
 @Entity
+@Table(indexes = {
+    @Index(columnList = "timestamp"),
+    @Index(columnList = "productID"),
+    @Index(columnList = "side"),
+    @Index(columnList = "orderID"),
+    @Index(name = "multiIndex1", columnList = "productID, side"),
+    @Index(name = "multiIndex2", columnList = "productID, timestamp"),
+    @Index(name = "multiIndex2", columnList = "productID, side, timestamp")
+})
 public class StockTransaction {
 
     //-------------------------------------------------------------------------------------
     public static final int SIDE_DEBIT = 1;              // Приход (дебет)
     public static final int SIDE_CREDIT = 2;             // Расход (кредит)
-
+    //-------------------------------------------------------------------------------------
     public static final int DEBIT_PURCHASE = 10;         // Покупка у поставщика (приход)
     public static final int DEBIT_SALE_RETURN = 11;      // Возврат от клиента (приход)
 
@@ -24,25 +31,25 @@ public class StockTransaction {
     public static final int REGRADE = 30;                // Пересорт товара (приход/расход)
     //-------------------------------------------------------------------------------------
 
-    // TODO Добавить индексы по ключевым полям поиска
 
     @Id
     @GeneratedValue
     public long transactionID;       // код транзакции
     public long timestamp;           // время транзакции в миллисекундах
     public int productID;            // код товара
-    public int side;                 // дебет/кредит
+    public int side;                 // дебет/кредит (приход/расход)
     public int operationCode;        // код операции
     public int amount;               // количество товара
     public double price;             // цена товара
-    public int counterpartyID;       // код контрагента
+    public long orderID;             // код заказа как основание (покупки/продажи - зависит от поля side)
     public int userID;               // код пользователя внесшего запись
     public boolean deleted;          // транзакция помечена как удалененная
 
 
     public StockTransaction() {}
 
-    public StockTransaction(int productID, int side, int opCode, int amount, double price) {
+    public StockTransaction(long orderID, int productID, int side, int opCode, int amount, double price) {
+        this.orderID = orderID;
         this.timestamp = System.currentTimeMillis();
         this.productID = productID;
         this.side = side;
@@ -108,12 +115,12 @@ public class StockTransaction {
         this.price = price;
     }
 
-    public int getCounterpartyID() {
-        return counterpartyID;
+    public long getOrderID() {
+        return orderID;
     }
 
-    public void setCounterpartyID(int counterpartyID) {
-        this.counterpartyID = counterpartyID;
+    public void setOrderID(long orderID) {
+        this.orderID = orderID;
     }
 
     public int getUserID() {

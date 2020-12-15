@@ -13,6 +13,8 @@ import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
 import java.util.List;
 
+// todo получить постраничный перечень заказов со статусами (фильтры по времени)
+
 /**
  * Управление клиентскими заказами
  */
@@ -25,16 +27,19 @@ public class SalesOrders {
     @Inject Customers customers;
 
     /**
-     * Получить все заказы клиентов
+     * Получить все заказы всех клиентов за указанный период
      * @return список заказов клиентов
      */
     @Transactional
-    public List<SalesOrder> getAllOrders(long startTime, long finishTime) {
-        // todo получить постраничный перечень заказов со статусами (фильтры по времени)
+    public List<SalesOrder> getAllOrders(long startTime, long finishTime, int status) {
+        // TODO Еще добавить фильтр по статусу
         List<SalesOrder> customerOrders;
         String query = "SELECT a FROM SalesOrder a";
         if (startTime > 0 || finishTime > 0) {
             query += " WHERE a.timestamp > " + startTime + " AND a.timestamp < " + finishTime;
+        }
+        if (status > 0) {
+            query += " AND a.status=" + status;
         }
         customerOrders = entityManager.createQuery(query, SalesOrder.class).getResultList();
         return customerOrders;
@@ -97,7 +102,9 @@ public class SalesOrders {
         SalesOrder salesOrder = entityManager.find(SalesOrder.class, orderID, LockModeType.PESSIMISTIC_WRITE);
         if (salesOrder==null) return null;
         salesOrder.setStatus(status);
-        // todo сделать бронирование остатков
+
+        // todo сделать бронирование остатков если выше неизменяемого статуса
+
         entityManager.persist(salesOrder);
         return salesOrder;
     }
@@ -112,7 +119,7 @@ public class SalesOrders {
     public boolean removeOrder(long orderID) {
         SalesOrder salesOrder = entityManager.find(SalesOrder.class, orderID, LockModeType.PESSIMISTIC_WRITE);
         if (salesOrder==null) return false;
-        if (salesOrder.getStatus() >= SalesOrder.STATUS_CHANGABLE) return false;
+        if (salesOrder.getStatus() >= SalesOrder.CHANGEABLE_BEFORE) return false;
         String query = "DELETE FROM SalesOrderEntry a WHERE a.orderID=" + salesOrder.getOrderID();
         entityManager.createQuery(query).executeUpdate();
         entityManager.remove(salesOrder);
