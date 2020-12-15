@@ -17,11 +17,9 @@ import java.util.List;
 @ApplicationScoped
 public class Inventory {
 
-    @Inject
-    EntityManager entityManager;
+    @Inject EntityManager entityManager;
 
-    @Inject
-    Catalogue catalogue;
+    @Inject Catalogue catalogue;
 
 
     //-----------------------------------------------------------------------------------------------------
@@ -209,6 +207,15 @@ public class Inventory {
             if (product==null) return null;
             stockInfo = createStockInformation(productID);
         }
+
+        // todo Алгоритм пересчёта Committed Stock & Available for Sale
+        //  Выбрать все подтвержденные, но не исполненные заказы
+        //  Выбрать все позиции этих заказов по продукту productID
+        //  Просуммировать - это будет равно Committed Stock
+        //  Available for Sale - это (StockOnHand - CommittedStock)
+        //  Сохраняем информацию в Складской карточке с временной меткой
+        //  p.s. Должна быть настройка - принимать ли заказы где заказ товара больше остатков
+
         return stockInfo;
     }
 
@@ -234,11 +241,7 @@ public class Inventory {
         }
 
         long stockOnHand = stockInfo.getStockOnHand() + amount;
-        long availableForSale = stockInfo.getAvailableForSale() + amount;
-
         stockInfo.setStockOnHand(stockOnHand);
-        stockInfo.setAvailableForSale(availableForSale);
-
         entityManager.persist(stockInfo);
         return true;
     }
@@ -262,30 +265,12 @@ public class Inventory {
         // Проверить есть ли вообще остатки товара (на руках)
         long stockOnHand = stockInfo.getStockOnHand() - amount;
         if (stockOnHand < 0) return false;
-
-        // todo если было забронировано - списывать из Committed Stock
-        // Проверить есть ли доступные для продажи остатки товара (не забронированные)
-        long availableForSale = stockInfo.getAvailableForSale() - amount;
-        if (availableForSale < 0) return false;
-
         stockInfo.setStockOnHand(stockOnHand);
-        stockInfo.setAvailableForSale(availableForSale);
-
-        // todo Пересчитать committed stock (подумать как в принципе реализовать бронирование)
-
         entityManager.persist(stockInfo);
-
         return true;
     }
 
 
-    public void bookOrder(long orderID) {
-        // todo Забронировать позиции заказа на складе
-    }
-
-    public void unbookOrder(long orderID) {
-        // todo Разбронировать позиции заказа на складе
-    }
 
 
 }
