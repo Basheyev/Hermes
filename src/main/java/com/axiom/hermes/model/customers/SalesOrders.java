@@ -4,6 +4,7 @@ import com.axiom.hermes.model.catalogue.Catalogue;
 import com.axiom.hermes.model.catalogue.entities.Product;
 import com.axiom.hermes.model.customers.entities.SalesOrder;
 import com.axiom.hermes.model.customers.entities.SalesOrderEntry;
+import com.axiom.hermes.model.inventory.Inventory;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -98,10 +99,8 @@ public class SalesOrders {
     public SalesOrder changeStatus(long orderID, int status) {
         SalesOrder salesOrder = entityManager.find(SalesOrder.class, orderID, LockModeType.PESSIMISTIC_WRITE);
         if (salesOrder==null) return null;
+        if (salesOrder.getStatus()==status) return salesOrder;
         salesOrder.setStatus(status);
-
-        // todo вызвать бронирование остатков если выше неизменяемого статуса
-
         entityManager.persist(salesOrder);
         return salesOrder;
     }
@@ -182,8 +181,11 @@ public class SalesOrders {
         if (orderID < 0 || productID < 0 || amount < 0) return null;
         SalesOrder salesOrder = getOrder(orderID);
         if (salesOrder==null) return null;
+        // Если заказ уже изменять нельзя уходим
+        if (salesOrder.getStatus() >= SalesOrder.CHANGEABLE_BEFORE) return null;
+
         Product product = catalogue.getProduct(productID);
-        if (product==null) return null;
+        if (product==null || !product.isAvailable()) return null;
 
         // Есть ли позиция по такому продукту в этом заказе
         // учитывать случай когда такая позиция уже есть и пытаются добавить еще такую же
@@ -220,10 +222,14 @@ public class SalesOrders {
         // Если такая позиция не найдена
         SalesOrderEntry managedEntry = entityManager.find(SalesOrderEntry.class, entryID);
         if (managedEntry==null) return null;
+        // Если заказ уже изменять нельзя уходим
+        SalesOrder salesOrder = getOrder(managedEntry.getOrderID());
+        if (salesOrder.getStatus() >= SalesOrder.CHANGEABLE_BEFORE) return null;
+
         // Если изменился код товара
         if (managedEntry.getProductID() != newProductID) {
             Product product = catalogue.getProduct(newProductID);
-            if (product==null) return null;
+            if (product==null || !product.isAvailable()) return null;
             managedEntry.setProductID(newProductID);
             managedEntry.setPrice(product.getPrice());
         }
@@ -231,7 +237,6 @@ public class SalesOrders {
         entityManager.persist(managedEntry);
 
         // Обновить временную метку последнего изменения заказа
-        SalesOrder salesOrder = getOrder(managedEntry.getOrderID());
         salesOrder.setTimestamp(System.currentTimeMillis());
         entityManager.persist(salesOrder);
 
@@ -247,10 +252,12 @@ public class SalesOrders {
     public boolean removeOrderEntry(long entryID) {
         SalesOrderEntry managedEntry = entityManager.find(SalesOrderEntry.class, entryID);
         if (managedEntry==null) return false;
+        // Если заказ уже изменять нельзя уходим
+        SalesOrder salesOrder = getOrder(managedEntry.getOrderID());
+        if (salesOrder.getStatus() >= SalesOrder.CHANGEABLE_BEFORE) return false;
         entityManager.remove(managedEntry);
 
         // Обновить временную метку последнего изменения заказа
-        SalesOrder salesOrder = getOrder(managedEntry.getOrderID());
         salesOrder.setTimestamp(System.currentTimeMillis());
         entityManager.persist(salesOrder);
 
