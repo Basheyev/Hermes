@@ -13,11 +13,7 @@ import javax.persistence.LockModeType;
 import javax.transaction.Transactional;
 import java.util.List;
 
-// todo Добавить работу с транзакциями:
-//  а) получить все транзакции по конкретному заказу клиента
-//  б) получить транзакции за время по товарной позиции за время
-// todo сделать учёт CommittedStock & AvailableForSale
-// todo добавить логирование и обработку исключений
+
 @ApplicationScoped
 public class Inventory {
 
@@ -27,18 +23,10 @@ public class Inventory {
     @Inject
     Catalogue catalogue;
 
-    /**
-     * Возвращает информацию по всем складским карточкам
-     * @return список складских карточек
-     */
-    @Transactional
-    public List<StockInformation> getAllStocks() {
-        List<StockInformation> allStocks;
-        String query = "SELECT a FROM StockInformation a";
-        allStocks = entityManager.createQuery(query, StockInformation.class).getResultList();
-        return allStocks;
-    }
 
+    //-----------------------------------------------------------------------------------------------------
+    // Работа со складскими транзакциями
+    //-----------------------------------------------------------------------------------------------------
 
     /**
      * Регистрация покупки товара (приход)
@@ -133,8 +121,66 @@ public class Inventory {
         return writeOffTransaction;
     }
 
-    // Пересорт (regrade)
-    public void regrade() {   }
+    // todo Пересорт (regrade)
+    public void regrade() {
+
+    }
+
+    /**
+     * Получить все складские транзакции по указанному заказу
+     * @param orderID заказа
+     * @return список складских транзакций по указанному заказу
+     */
+    public List<StockTransaction> getOrderTransactions(long orderID) {
+        List<StockTransaction> orderTransactions;
+        String query = "SELECT a FROM StockTransaction a WHERE a.orderID=" + orderID;
+        orderTransactions = entityManager.createQuery(query, StockTransaction.class).getResultList();
+        return orderTransactions;
+    }
+
+    /**
+     * Получит складские транзакции по указанной товарной позиции в указанный период
+     * @param productID товарной позиции
+     * @param startTime с какого времени
+     * @param endTime по какое время
+     * @return список складских транзакций по указнной товарной позиции в указанный период
+     */
+    public List<StockTransaction> getProductTransactions(int productID, long startTime, long endTime) {
+        List<StockTransaction> productTransactions;
+        String query = "SELECT a FROM StockTransaction a WHERE a.productID=" + productID;
+        if (startTime>0 || endTime > 0) {
+            query += " WHERE a.timestamp > " + startTime + " AND a.timestamp < " + endTime;
+        }
+        productTransactions = entityManager.createQuery(query, StockTransaction.class).getResultList();
+        return productTransactions;
+    }
+
+    //-----------------------------------------------------------------------------------------------------
+    // Работа со складскими карточками
+    //-----------------------------------------------------------------------------------------------------
+
+    /**
+     * Возвращает информацию по всем складским карточкам
+     * @return список складских карточек
+     */
+    @Transactional
+    public List<StockInformation> getAllStocks() {
+        List<StockInformation> allStocks;
+        String query = "SELECT a FROM StockInformation a";
+        allStocks = entityManager.createQuery(query, StockInformation.class).getResultList();
+        return allStocks;
+    }
+
+    /**
+     * Возвращает список складских карточек товарных позиций по которым требуется пополнение запасов
+     * @return список складских карточек товарных позиций требующих пополнения запасов
+     */
+    public List<StockInformation> getReplenishmentStocks() {
+        List<StockInformation> stocks;
+        String query = "SELECT a FROM StockInformation a WHERE a.stockOnHand <= a.reorderPoint";
+        stocks = entityManager.createQuery(query, StockInformation.class).getResultList();
+        return stocks;
+    }
 
     /**
      * Создать складскую карточку под товарную позицию
@@ -142,7 +188,7 @@ public class Inventory {
      * @return складская карточка
      */
     @Transactional
-    public StockInformation createStockKeepingUnit(int productID) {
+    public StockInformation createStockInformation(int productID) {
         StockInformation stockInfo = new StockInformation(productID);
         entityManager.persist(stockInfo);
         return stockInfo;
@@ -161,11 +207,10 @@ public class Inventory {
         if (stockInfo==null) {
             Product product = catalogue.getProduct(productID);
             if (product==null) return null;
-            stockInfo = createStockKeepingUnit(productID);
+            stockInfo = createStockInformation(productID);
         }
         return stockInfo;
     }
-
 
 
     /**
@@ -181,15 +226,19 @@ public class Inventory {
                 productID,
                 LockModeType.PESSIMISTIC_WRITE);
 
-        // Если складской карточки нет, то создаём её если такая товарная позиция есть
+        // Если складской карточки нет, то создаём её если такая товарная позиция есть в каталоге
         if (stockInfo==null) {
             Product product = catalogue.getProduct(productID);
             if (product==null) return false;
-            stockInfo = createStockKeepingUnit(productID);
+            stockInfo = createStockInformation(productID);
         }
 
-        long newBalance = stockInfo.getStockOnHand() + amount;
-        stockInfo.setStockOnHand(newBalance);
+        long stockOnHand = stockInfo.getStockOnHand() + amount;
+        long availableForSale = stockInfo.getAvailableForSale() + amount;
+
+        stockInfo.setStockOnHand(stockOnHand);
+        stockInfo.setAvailableForSale(availableForSale);
+
         entityManager.persist(stockInfo);
         return true;
     }
@@ -210,20 +259,33 @@ public class Inventory {
                 LockModeType.PESSIMISTIC_WRITE);
         if (stockInfo==null) return false;
 
-        long newBalance = stockInfo.getStockOnHand() - amount;
+        // Проверить есть ли вообще остатки товара (на руках)
+        long stockOnHand = stockInfo.getStockOnHand() - amount;
+        if (stockOnHand < 0) return false;
 
-        // todo Учитывать available for sale
-        if (newBalance < 0) return false;
-        stockInfo.setStockOnHand(newBalance);
+        // todo если было забронировано - списывать из Committed Stock
+        // Проверить есть ли доступные для продажи остатки товара (не забронированные)
+        long availableForSale = stockInfo.getAvailableForSale() - amount;
+        if (availableForSale < 0) return false;
+
+        stockInfo.setStockOnHand(stockOnHand);
+        stockInfo.setAvailableForSale(availableForSale);
+
+        // todo Пересчитать committed stock (подумать как в принципе реализовать бронирование)
+
         entityManager.persist(stockInfo);
 
         return true;
     }
 
-    // todo Добавить вытащить транзакции по указанному Заказу
 
-    // todo сделать бронирование остатков на основе заказа и пересчитать CommittedStock & AvailableForSale
+    public void bookOrder(long orderID) {
+        // todo Забронировать позиции заказа на складе
+    }
 
-    // todo определить уровень исполнения заказа (по номеру OrderID и фактическим транзакциям)
+    public void unbookOrder(long orderID) {
+        // todo Разбронировать позиции заказа на складе
+    }
+
 
 }

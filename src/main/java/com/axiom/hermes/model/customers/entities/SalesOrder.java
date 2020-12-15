@@ -10,8 +10,8 @@ import javax.persistence.*;
     @Index(columnList = "customerID"),
     @Index(columnList = "timestamp"),
     @Index(columnList = "status"),
-    @Index(name = "multiIndex1", columnList = "timestamp, status"),
-    @Index(name = "multiIndex2", columnList = "customerID, status")
+    @Index(name = "SalesOrderIndex1", columnList = "timestamp, status"),
+    @Index(name = "SalesOrderIndex2", columnList = "customerID, status")
 })
 public class SalesOrder {
     //-------------------------------------------------------------------------------------------

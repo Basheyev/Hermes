@@ -6,12 +6,14 @@ import javax.persistence.*;
  * Карточка клиента
  */
 @Entity
+@Table(indexes = {
+        @Index(columnList = "mobile"),
+        @Index(columnList = "businessID")
+})
 public class Customer {
     @Id @GeneratedValue
     private int customerID;                    // ID клиента
-    // todo добавить индекс
     private String mobile;                     // Мобильный номер
-    // todo добавить индекс
     private String businessID;                 // БИН/ИИН клиента
     private String name;                       // Имя клиента (ФИО/ИП/ТОО)
     private String address;                    // Адрес клиента

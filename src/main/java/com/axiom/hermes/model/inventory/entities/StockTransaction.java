@@ -11,9 +11,9 @@ import javax.persistence.*;
     @Index(columnList = "productID"),
     @Index(columnList = "side"),
     @Index(columnList = "orderID"),
-    @Index(name = "multiIndex1", columnList = "productID, side"),
-    @Index(name = "multiIndex2", columnList = "productID, timestamp"),
-    @Index(name = "multiIndex2", columnList = "productID, side, timestamp")
+    @Index(name = "StockTransactionIndex1", columnList = "productID, side"),
+    @Index(name = "StockTransactionIndex2", columnList = "productID, timestamp"),
+    @Index(name = "StockTransactionIndex3", columnList = "productID, side, timestamp")
 })
 public class StockTransaction {
 

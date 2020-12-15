@@ -30,6 +30,19 @@ public class InventoryService {
         return Response.ok(allStock).build();
     }
 
+    /**
+     * Возвращает список складских карточек товарных позиций по которым требуется пополнение запасов
+     * @return список складских карточек товарных позиций требующих пополнения запасов
+     */
+    @GET
+    @Path("/getReplenishmentStocks")
+    public Response getReplenishmentStocks() {
+        List<StockInformation> stocks = inventory.getReplenishmentStocks();
+        if (stocks==null) return Response.status(Response.Status.NOT_FOUND).build();
+        return Response.ok(stocks).build();
+    }
+
+
     @GET
     @Path("/purchase")
     public Response purchase(@QueryParam("orderID") long orderID,
@@ -83,6 +96,38 @@ public class InventoryService {
         StockTransaction writeOff = inventory.writeOff(orderID, productID, amount, price);
         if (writeOff==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(writeOff).build();
+    }
+
+    /**
+     * Получить все складские транзакции по указанному заказу
+     * @param orderID заказа
+     * @return список складских транзакций по указанному заказу
+     */
+    @GET
+    @Path("/getOrderTransactions")
+    public Response getOrderTransactions(@QueryParam("orderID") long orderID) {
+        List<StockTransaction> orderTransactions = inventory.getOrderTransactions(orderID);
+        if (orderTransactions==null) return Response.status(Response.Status.NOT_FOUND).build();
+        return Response.ok(orderTransactions).build();
+    }
+
+    /**
+     * Получит складские транзакции по указанной товарной позиции в указанный период
+     * @param productID товарной позиции
+     * @param startTime с какого времени
+     * @param endTime по какое время
+     * @return список складских транзакций по указнной товарной позиции в указанный период
+     */
+    @GET
+    @Path("/getProductTransactions")
+    public Response getProductTransactions(
+            @QueryParam("productID") int productID,
+            @QueryParam("startTime") long startTime,
+            @QueryParam("endTime") long endTime) {
+        List<StockTransaction> productTransactions;
+        productTransactions = inventory.getProductTransactions(productID, startTime, endTime);
+        if (productTransactions==null) return Response.status(Response.Status.NOT_FOUND).build();
+        return Response.ok(productTransactions).build();
     }
 
     @GET

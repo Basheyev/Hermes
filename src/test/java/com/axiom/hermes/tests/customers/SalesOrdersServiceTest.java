@@ -18,6 +18,8 @@ import static org.hamcrest.Matchers.*;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class SalesOrdersServiceTest {
 
+    // todo добавить тесты на остатки, бронь и доступно для покупки
+
     private static final Logger LOG = Logger.getLogger(SalesOrdersServiceTest.class);
 
     private static int addedOrderID;

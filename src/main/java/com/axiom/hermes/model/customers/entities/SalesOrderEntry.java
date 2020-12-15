@@ -8,7 +8,7 @@ import javax.persistence.*;
 @Entity
 @Table(indexes = {
     @Index(columnList = "orderID"),
-    @Index(name = "multiIndex", columnList = "orderID, productID")
+    @Index(name = "SalesOrderEntryIndex", columnList = "orderID, productID")
 })
 public class SalesOrderEntry {
     @Id @GeneratedValue

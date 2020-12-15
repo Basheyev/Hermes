@@ -13,8 +13,6 @@ import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
 import java.util.List;
 
-// todo получить постраничный перечень заказов со статусами (фильтры по времени)
-
 /**
  * Управление клиентскими заказами
  */
@@ -31,12 +29,11 @@ public class SalesOrders {
      * @return список заказов клиентов
      */
     @Transactional
-    public List<SalesOrder> getAllOrders(long startTime, long finishTime, int status) {
-        // TODO Еще добавить фильтр по статусу
+    public List<SalesOrder> getAllOrders(long startTime, long endTime, int status) {
         List<SalesOrder> customerOrders;
         String query = "SELECT a FROM SalesOrder a";
-        if (startTime > 0 || finishTime > 0) {
-            query += " WHERE a.timestamp > " + startTime + " AND a.timestamp < " + finishTime;
+        if (startTime > 0 || endTime > 0) {
+            query += " WHERE a.timestamp > " + startTime + " AND a.timestamp < " + endTime;
         }
         if (status > 0) {
             query += " AND a.status=" + status;
@@ -103,7 +100,7 @@ public class SalesOrders {
         if (salesOrder==null) return null;
         salesOrder.setStatus(status);
 
-        // todo сделать бронирование остатков если выше неизменяемого статуса
+        // todo вызвать бронирование остатков если выше неизменяемого статуса
 
         entityManager.persist(salesOrder);
         return salesOrder;
