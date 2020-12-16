@@ -40,7 +40,6 @@ public class InventoryServiceTest {
                 .assertThat()
                 .statusCode(200)
                 .body("productID", equalTo(productID))
-                .body("stockOnHand", equalTo(0))
         .extract().jsonPath().getInt("stockOnHand");
 
         LOG.info("Initial stock:" + initialStock);
@@ -133,11 +132,11 @@ public class InventoryServiceTest {
 
     @Test
     @Order(7)
-    public void saleOutOfStcok() {
+    public void saleOutOfStock() {
         String response =
                 given()
                         .when()
-                        .get("/inventory/sale?productID=" + productID + "&amount=10&price=30")
+                        .get("/inventory/sale?productID=" + productID + "&amount=1000&price=30")
                 .then()
                         .assertThat()
                         .statusCode(404)
@@ -157,12 +156,10 @@ public class InventoryServiceTest {
                 .assertThat()
                     .statusCode(200)
                     .body("productID", equalTo(productID))
-                    .body("stockOnHand", equalTo(0))
+                    .body("stockOnHand", equalTo(initialStock))
                 .extract().jsonPath().getInt("stockOnHand");
 
         LOG.info("Final stock: " + finalStock);
-
-        assertTrue(initialStock==finalStock);
     }
 
 }

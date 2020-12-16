@@ -28,7 +28,7 @@ public class Inventory {
     @Inject SalesOrders salesOrders;
 
     //-----------------------------------------------------------------------------------------------------
-    // Проведение базовых транзакций в журнале складского учёта
+    // Базовые операции в журнале складского учёта - тут основная бизнес логика и производительность
     //-----------------------------------------------------------------------------------------------------
     @Transactional
     private StockTransaction debitStock(int opCode, long orderID, int productID, int amount, double price) {
@@ -39,19 +39,22 @@ public class Inventory {
                 StockInformation.class, productID,
                 LockModeType.PESSIMISTIC_WRITE);
 
-        // Если складской карточки нет, то создаём её если такая товарная позиция есть в каталоге
+        // Если складской карточки нет
         if (stockInfo==null) {
+            // Если такая товарная позиция есть в каталоге
             Product product = catalogue.getProduct(productID);
             if (product==null) return null;
+            // Создаем складскую карточку под товарную позицию
             stockInfo = createStockInformation(productID);
         }
 
         // Обновляем данные позиции заказа если операция возврата товара
         if (opCode==DEBIT_SALE_RETURN) {
+            // Уменьшаем количество отгруженного товара по позиции заказа
             salesOrders.subtractFulfilledAmount(orderID, productID, amount);
         }
 
-        // Проводим складскую транзакцию
+        // Проводим складскую транзакцию в журнале складских транзакций
         StockTransaction stockTransaction = new StockTransaction(orderID, productID,
                 StockTransaction.SIDE_DEBIT, opCode, amount, price);
         entityManager.persist(stockTransaction);
@@ -79,6 +82,7 @@ public class Inventory {
 
         // Если складской карточки нет, то и товара нет
         if (stockInfo==null) return null;
+        // Если не хватает остатков
         long stockOnHand = stockInfo.getStockOnHand();
         if (stockOnHand < amount) return null;
         long committedStock = stockInfo.getCommittedStock();
@@ -86,23 +90,23 @@ public class Inventory {
 
         // Если это операции Продажи
         if (opCode==CREDIT_SALE) {
-            // Обновляем данные позиции заказа
+            // Обновляем данные позиции заказа чтобы снять бронь с указанного количества
             SalesOrderEntry salesOrderEntry = salesOrders.addFulfilledAmount(orderID, productID, amount);
-            // Если такой брони нет - продаём с AvailableForSale
+            // Если такой брони нет - продаём незабронированных остатков (AvailableForSale)
             if (salesOrderEntry==null) {
-                // Получаем забронированное заказами количество товара
+                // Получаем забронированное подтвержденными заказами количество товара
                 committedStock = salesOrders.getCommittedAmount(productID);
                 // Считаем количество доступное для продажи (не забронированное)
                 availableForSale = stockInfo.getStockOnHand() - committedStock;
                 // Проверяем хватает ли незабронированных остатков
                 if (availableForSale < amount) return null;
-                // Если хватает берем цену из каталога
+                // Если хватает берем официальную цену из каталога
                 price = catalogue.getProduct(productID).getPrice();
-                // Пересчитываем остатки
+                // Пересчитываем остатки для складской карточки
                 stockOnHand -= amount;
                 availableForSale -= amount;
             } else {
-                // Если бронь есть - продаём с CommittedStock
+                // Если такая бронь есть - продаём с забронированных остатков (CommittedStock)
                 price = salesOrderEntry.getPrice();              // Берем цену из заказа
                 stockOnHand -= amount;                           // Пересчитываем общие остатки
                 committedStock -= amount;                        // Пересчитываем забронированные остатки
@@ -114,7 +118,7 @@ public class Inventory {
             if (availableForSale < 0) availableForSale = 0;
         }
 
-        // Проводим складскую транзакцию
+        // Проводим складскую транзакцию в журнале складских транзакций
         StockTransaction stockTransaction = new StockTransaction(orderID, productID,
                 StockTransaction.SIDE_CREDIT, opCode, amount, price);
         entityManager.persist(stockTransaction);
@@ -130,7 +134,7 @@ public class Inventory {
     }
 
     //-----------------------------------------------------------------------------------------------------
-    // Работа со складскими транзакциями
+    // Проведение складских транзакций в журнале складского учёта
     //-----------------------------------------------------------------------------------------------------
 
     /**
@@ -145,7 +149,6 @@ public class Inventory {
         return debitStock(DEBIT_PURCHASE, orderID, productID, amount, price);
     }
 
-
     /**
      * Продажа товара (расход)
      * @param orderID заказа
@@ -157,7 +160,6 @@ public class Inventory {
     public StockTransaction sale(long orderID, int productID, int amount) {
         return creditStock(CREDIT_SALE, orderID, productID, amount, 0);
     }
-
 
     /**
      * Регистрация возврата товара (приход)
@@ -171,7 +173,6 @@ public class Inventory {
         return debitStock(DEBIT_SALE_RETURN, orderID, productID, amount, price);
     }
 
-
     /**
      * Возврат поставщику закупленного товара (расход)
      * @param productID код товарной позиции
@@ -183,7 +184,6 @@ public class Inventory {
     public StockTransaction purchaseReturn(long orderID, int productID, int amount, double price) {
         return creditStock(CREDIT_PURCHASE_RETURN, orderID, productID, amount, price);
     }
-
 
     /**
      * Списание товара (расход)
@@ -197,6 +197,9 @@ public class Inventory {
         return creditStock(CREDIT_WRITE_OFF, orderID, productID, amount, price);
     }
 
+    //-----------------------------------------------------------------------------------------------------
+    // Получение данных по транзакциям
+    //-----------------------------------------------------------------------------------------------------
 
     /**
      * Получить все складские транзакции по указанному заказу
