@@ -3,6 +3,8 @@ package com.axiom.hermes.model.inventory;
 
 import com.axiom.hermes.model.catalogue.Catalogue;
 import com.axiom.hermes.model.catalogue.entities.Product;
+import com.axiom.hermes.model.customers.SalesOrders;
+import com.axiom.hermes.model.customers.entities.SalesOrderEntry;
 import com.axiom.hermes.model.inventory.entities.StockInformation;
 import com.axiom.hermes.model.inventory.entities.StockTransaction;
 
@@ -13,14 +15,72 @@ import javax.persistence.LockModeType;
 import javax.transaction.Transactional;
 import java.util.List;
 
-
+/**
+ * Управление складским учётом
+ */
 @ApplicationScoped
 public class Inventory {
 
     @Inject EntityManager entityManager;
 
     @Inject Catalogue catalogue;
+    @Inject SalesOrders salesOrders;
 
+    //-----------------------------------------------------------------------------------------------------
+    // Проведение базовых транзакций в журнале складского учёта
+    //-----------------------------------------------------------------------------------------------------
+    @Transactional
+    private StockTransaction debitStock(int opCode, long orderID, int productID, int amount, double price) {
+        if (orderID < 0 || productID < 0 || amount <= 0 || price < 0) return null;
+
+        // Поднимаем складскую карточку товара
+        StockInformation stockInfo = entityManager.find(
+                StockInformation.class, productID,
+                LockModeType.PESSIMISTIC_WRITE);
+
+        // Если складской карточки нет, то создаём её если такая товарная позиция есть в каталоге
+        if (stockInfo==null) {
+            Product product = catalogue.getProduct(productID);
+            if (product==null) return null;
+            stockInfo = createStockInformation(productID);
+        }
+
+        long stockOnHand = stockInfo.getStockOnHand() + amount;
+        stockInfo.setStockOnHand(stockOnHand);
+        stockInfo.setTimestamp(System.currentTimeMillis());
+        entityManager.persist(stockInfo);
+
+        StockTransaction stockTransaction = new StockTransaction(orderID, productID,
+                StockTransaction.SIDE_DEBIT, opCode, amount, price);
+        entityManager.persist(stockTransaction);
+
+        return stockTransaction;
+    }
+
+    @Transactional
+    private StockTransaction creditStock(int opCode, long orderID, int productID, int amount, double price) {
+        if (orderID < 0 || productID < 0 || amount <= 0 || price < 0) return null;
+
+        // Поднимаем складскую карточку товара
+        StockInformation stockInfo = entityManager.find(
+                StockInformation.class, productID,
+                LockModeType.PESSIMISTIC_WRITE);
+
+        // Если складской карточки нет
+        if (stockInfo==null) return null;
+
+        long stockOnHand = stockInfo.getStockOnHand() - amount;
+        if (stockOnHand < 0) return null;
+        stockInfo.setStockOnHand(stockOnHand);
+        stockInfo.setTimestamp(System.currentTimeMillis());
+        entityManager.persist(stockInfo);
+
+        StockTransaction stockTransaction = new StockTransaction(orderID, productID,
+                StockTransaction.SIDE_CREDIT, opCode, amount, price);
+        entityManager.persist(stockTransaction);
+
+        return stockTransaction;
+    }
 
     //-----------------------------------------------------------------------------------------------------
     // Работа со складскими транзакциями
@@ -35,14 +95,33 @@ public class Inventory {
      */
     @Transactional
     public StockTransaction purchase(long orderID, int productID, int amount, double price) {
-        if (orderID < 0) return null;
-        if (!debitProductStock(productID, amount)) return null;
-        StockTransaction purchaseTransaction = new StockTransaction(orderID, productID,
-                StockTransaction.SIDE_DEBIT,
-                StockTransaction.DEBIT_PURCHASE,
-                amount, price);
-        entityManager.persist(purchaseTransaction);
-        return purchaseTransaction;
+        return debitStock(StockTransaction.DEBIT_PURCHASE, orderID, productID, amount, price);
+    }
+
+
+    /**
+     * Продажа товара (расход)
+     * @param orderID заказа
+     * @param productID код товарной позиции
+     * @param amount количество
+     * @return true - если проведена, false - если нет товара
+     */
+    @Transactional
+    public StockTransaction sale(long orderID, int productID, int amount) {
+
+        double price;
+        SalesOrderEntry salesOrderEntry = salesOrders.addFulfilledAmount(orderID, productID, amount);
+
+        // Если Заказ не был указан продаём только с available for sale
+        if (salesOrderEntry==null) {
+            StockInformation stockInformation = getStockInformation(productID);
+            if (stockInformation.getAvailableForSale() < amount) return null;
+            price = catalogue.getProduct(productID).getPrice();
+        } else {
+            price = salesOrderEntry.getPrice();
+        }
+
+        return creditStock(StockTransaction.CREDIT_SALE, orderID, productID, amount, price);
     }
 
 
@@ -55,32 +134,14 @@ public class Inventory {
      */
     @Transactional
     public StockTransaction saleReturn(long orderID, int productID, int amount, double price) {
-        if (!debitProductStock(productID, amount)) return null;
-        StockTransaction saleReturnTransaction = new StockTransaction(orderID, productID,
-                StockTransaction.SIDE_DEBIT,
-                StockTransaction.DEBIT_SALE_RETURN,
-                amount, price);
-        entityManager.persist(saleReturnTransaction);
-        return saleReturnTransaction;
+        StockTransaction saleReturn =
+                debitStock(StockTransaction.DEBIT_SALE_RETURN,
+                orderID, productID, amount, price);
+        if (saleReturn==null) return null;
+        salesOrders.subtractFulfilledAmount(orderID, productID, amount);
+        return saleReturn;
     }
 
-    /**
-     * Продажа товара (расход)
-     * @param productID код товарной позиции
-     * @param amount количество
-     * @param price цена
-     * @return true - если проведена, false - если нет товара
-     */
-    @Transactional
-    public StockTransaction sale(long orderID, int productID, int amount, double price) {
-        if (!creditProductStock(productID, amount)) return null;
-        StockTransaction saleTransaction = new StockTransaction(orderID, productID,
-                StockTransaction.SIDE_CREDIT,
-                StockTransaction.CREDIT_SALE,
-                amount, price);
-        entityManager.persist(saleTransaction);
-        return saleTransaction;
-    }
 
     /**
      * Возврат поставщику закупленного товара (расход)
@@ -91,13 +152,7 @@ public class Inventory {
      */
     @Transactional
     public StockTransaction purchaseReturn(long orderID, int productID, int amount, double price) {
-        if (!creditProductStock(productID, amount)) return null;
-        StockTransaction purchaseReturnTransaction = new StockTransaction(orderID, productID,
-                StockTransaction.SIDE_CREDIT,
-                StockTransaction.CREDIT_PURCHASE_RETURN,
-                amount, price);
-        entityManager.persist(purchaseReturnTransaction);
-        return purchaseReturnTransaction;
+        return creditStock(StockTransaction.CREDIT_PURCHASE_RETURN, orderID, productID, amount, price);
     }
 
 
@@ -110,19 +165,9 @@ public class Inventory {
      */
     @Transactional
     public StockTransaction writeOff(long orderID, int productID, int amount, double price) {
-        if (!creditProductStock(productID, amount)) return null;
-        StockTransaction writeOffTransaction = new StockTransaction(orderID, productID,
-                StockTransaction.SIDE_CREDIT,
-                StockTransaction.CREDIT_WRITE_OFF,
-                amount, price);
-        entityManager.persist(writeOffTransaction);
-        return writeOffTransaction;
+        return creditStock(StockTransaction.CREDIT_WRITE_OFF, orderID, productID, amount, price);
     }
 
-    // todo Пересорт (regrade)
-    public void regrade() {
-
-    }
 
     /**
      * Получить все складские транзакции по указанному заказу
@@ -147,7 +192,7 @@ public class Inventory {
         List<StockTransaction> productTransactions;
         String query = "SELECT a FROM StockTransaction a WHERE a.productID=" + productID;
         if (startTime>0 || endTime > 0) {
-            query += " WHERE a.timestamp > " + startTime + " AND a.timestamp < " + endTime;
+            query += " WHERE a.timestamp BETWEEN " + startTime + " AND " + endTime;
         }
         productTransactions = entityManager.createQuery(query, StockTransaction.class).getResultList();
         return productTransactions;
@@ -166,19 +211,11 @@ public class Inventory {
         List<StockInformation> allStocks;
         String query = "SELECT a FROM StockInformation a";
         allStocks = entityManager.createQuery(query, StockInformation.class).getResultList();
+        // fixme getAllStocks - будет давать неверную информацию по committed stock & available
+        //  нужен ли этот метод вообще?
         return allStocks;
     }
 
-    /**
-     * Возвращает список складских карточек товарных позиций по которым требуется пополнение запасов
-     * @return список складских карточек товарных позиций требующих пополнения запасов
-     */
-    public List<StockInformation> getReplenishmentStocks() {
-        List<StockInformation> stocks;
-        String query = "SELECT a FROM StockInformation a WHERE a.stockOnHand <= a.reorderPoint";
-        stocks = entityManager.createQuery(query, StockInformation.class).getResultList();
-        return stocks;
-    }
 
     /**
      * Создать складскую карточку под товарную позицию
@@ -194,7 +231,7 @@ public class Inventory {
 
 
     /**
-     * Получить складскую карточку по коду товарной позиции
+     * Получить складскую карточку по коду товарной позиции и вычисляет забронированный обьем
      * @param productID код товарной позиции
      * @return складская карточка
      */
@@ -206,71 +243,34 @@ public class Inventory {
             Product product = catalogue.getProduct(productID);
             if (product==null) return null;
             stockInfo = createStockInformation(productID);
+            return stockInfo;
         }
 
-        // todo Алгоритм пересчёта Committed Stock & Available for Sale
-        //  Выбрать все подтвержденные, но не исполненные заказы
-        //  Выбрать все позиции этих заказов по продукту productID
-        //  Просуммировать - это будет равно Committed Stock
-        //  Available for Sale - это (StockOnHand - CommittedStock)
-        //  Сохраняем информацию в Складской карточке с временной меткой
-        //  p.s. Должна быть настройка - принимать ли заказы где заказ товара больше остатков
+        // Получаем забронированное заказами количество товара
+        long committedStock = salesOrders.getCommittedAmount(productID);
+
+        // Считаем количество доступное для продажи (не забронированное)
+        long availableForSale = stockInfo.getStockOnHand() - committedStock;
+        if (availableForSale < 0) availableForSale = 0;
+
+        stockInfo.setCommittedStock(committedStock);
+        stockInfo.setAvailableForSale(availableForSale);
+        stockInfo.setTimestamp(System.currentTimeMillis());
+        entityManager.persist(stockInfo);
 
         return stockInfo;
     }
 
 
     /**
-     * Оформление прихода в складской карточке
-     * @param productID код товарной позиции
-     * @param amount количество
-     * @return true если успешно, false - если такой товарной позиции нет
+     * Возвращает список складских карточек товарных позиций по которым требуется пополнение запасов
+     * @return список складских карточек товарных позиций требующих пополнения запасов
      */
-    @Transactional
-    private boolean debitProductStock(int productID, int amount) {
-        StockInformation stockInfo = entityManager.find(
-                StockInformation.class,
-                productID,
-                LockModeType.PESSIMISTIC_WRITE);
-
-        // Если складской карточки нет, то создаём её если такая товарная позиция есть в каталоге
-        if (stockInfo==null) {
-            Product product = catalogue.getProduct(productID);
-            if (product==null) return false;
-            stockInfo = createStockInformation(productID);
-        }
-
-        long stockOnHand = stockInfo.getStockOnHand() + amount;
-        stockInfo.setStockOnHand(stockOnHand);
-        entityManager.persist(stockInfo);
-        return true;
+    public List<StockInformation> getReplenishmentStocks() {
+        List<StockInformation> stocks;
+        String query = "SELECT a FROM StockInformation a WHERE a.stockOnHand <= a.reorderPoint";
+        stocks = entityManager.createQuery(query, StockInformation.class).getResultList();
+        return stocks;
     }
-
-
-
-    /**
-     * Оформление расхода в складской карточке
-     * @param productID код товарной позиции
-     * @param amount количество
-     * @return true - если успешно, false - если столько товара нет
-     */
-    @Transactional
-    private boolean creditProductStock(int productID, int amount) {
-        StockInformation stockInfo = entityManager.find(
-                StockInformation.class,
-                productID,
-                LockModeType.PESSIMISTIC_WRITE);
-        if (stockInfo==null) return false;
-
-        // Проверить есть ли вообще остатки товара (на руках)
-        long stockOnHand = stockInfo.getStockOnHand() - amount;
-        if (stockOnHand < 0) return false;
-        stockInfo.setStockOnHand(stockOnHand);
-        entityManager.persist(stockInfo);
-        return true;
-    }
-
-
-
 
 }

@@ -92,7 +92,6 @@ public class InventoryServiceTest {
                     .statusCode(200)
                     .body("productID", equalTo(productID))
                     .body("amount", equalTo(10))
-                    .body("price", equalTo(30f))
                 .extract().asString();
         LOG.info(response);
     }

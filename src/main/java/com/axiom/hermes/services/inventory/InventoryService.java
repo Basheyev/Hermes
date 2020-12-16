@@ -69,9 +69,8 @@ public class InventoryService {
     @Path("/sale")
     public Response sale(@QueryParam("orderID") long orderID,
                          @QueryParam("productID") int productID,
-                         @QueryParam("amount") int amount,
-                         @QueryParam("price") double price) {
-        StockTransaction sale = inventory.sale(orderID, productID, amount, price);
+                         @QueryParam("amount") int amount) {
+        StockTransaction sale = inventory.sale(orderID, productID, amount);
         if (sale==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(sale).build();
     }

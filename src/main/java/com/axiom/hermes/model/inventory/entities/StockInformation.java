@@ -14,6 +14,7 @@ public class StockInformation {
     private long committedStock;           // Объем принятого, но не исполненного заказа на товар
     private long availableForSale;         // Всего доступного для продажи товара
     private long reorderPoint;             // Минимальные остатки
+    private long timestamp;                // Временная метка
 
     public StockInformation() {}
 
@@ -63,5 +64,13 @@ public class StockInformation {
 
     public void setReorderPoint(long reorderPoint) {
         this.reorderPoint = reorderPoint;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
     }
 }

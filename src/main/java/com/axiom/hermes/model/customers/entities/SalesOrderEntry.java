@@ -17,7 +17,7 @@ public class SalesOrderEntry {
     private int productID;                   // Товарная позиция
     private int amount;                      // Количество заказанного товара
     private double price;                    // Цена товара на момент заказа
-
+    private int fulfilledAmount;             // Позиция заказа выполнена
 
     public SalesOrderEntry() { }
 
@@ -68,4 +68,11 @@ public class SalesOrderEntry {
         this.price = price;
     }
 
+    public int getFulfilledAmount() {
+        return fulfilledAmount;
+    }
+
+    public void setFulfilledAmount(int fulfilledAmount) {
+        this.fulfilledAmount = fulfilledAmount;
+    }
 }

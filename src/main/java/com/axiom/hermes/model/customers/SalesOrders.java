@@ -25,6 +25,8 @@ public class SalesOrders {
     @Inject Catalogue catalogue;
     @Inject Customers customers;
 
+    // todo Нужна настройка - принимать ли заказы где заказ товара больше текущих/доступных остатков
+
     /**
      * Получить все заказы всех клиентов за указанный период
      * @return список заказов клиентов
@@ -34,7 +36,7 @@ public class SalesOrders {
         List<SalesOrder> customerOrders;
         String query = "SELECT a FROM SalesOrder a";
         if (startTime > 0 || endTime > 0) {
-            query += " WHERE a.timestamp > " + startTime + " AND a.timestamp < " + endTime;
+            query += " WHERE a.timestamp BETWEEN " + startTime + " AND " + endTime;
         }
         if (status > 0) {
             query += " AND a.status=" + status;
@@ -160,7 +162,9 @@ public class SalesOrders {
     public SalesOrderEntry getOrderEntry(long orderID, int productID) {
         if (orderID<0 || productID<0) return null;
         SalesOrderEntry entry = null;
-        String query = "SELECT a FROM SalesOrderEntry a WHERE a.orderID=" + orderID + "AND a.productID=" + productID;
+        String query =
+                "SELECT a FROM SalesOrderEntry a " +
+                "WHERE a.orderID=" + orderID + " AND a.productID=" + productID;
         try {
             entry = entityManager.createQuery(query, SalesOrderEntry.class).getSingleResult();
         } catch (NoResultException e) {
@@ -244,6 +248,43 @@ public class SalesOrders {
     }
 
     /**
+     * Добавляет исполненное количество позиции заказа (используется в Inventory)
+     * @param orderID заказа
+     * @param productID товарной позиции
+     * @param fulfilledAmount исполненное количество
+     * @return обновленная позиция заказа
+     */
+    @Transactional
+    public SalesOrderEntry addFulfilledAmount(long orderID, int productID, int fulfilledAmount) {
+        if (fulfilledAmount <= 0) return null;
+        SalesOrderEntry salesOrderEntry = getOrderEntry(orderID, productID);
+        if (salesOrderEntry == null) return null;
+        int newFulfilledAmount = salesOrderEntry.getFulfilledAmount() + fulfilledAmount;
+        salesOrderEntry.setFulfilledAmount(newFulfilledAmount);
+        entityManager.persist(salesOrderEntry);
+        return salesOrderEntry;
+    }
+
+    /**
+     * Вычитает исполненное количество позиции заказа (используется в Inventory)
+     * @param orderID заказа
+     * @param productID товарной позиции
+     * @param fulfilledAmount исполненное количество
+     * @return обновленная позиция заказа
+     */
+    @Transactional
+    public SalesOrderEntry subtractFulfilledAmount(long orderID, int productID, int fulfilledAmount) {
+        if (fulfilledAmount <= 0) return null;
+        SalesOrderEntry salesOrderEntry = getOrderEntry(orderID, productID);
+        if (salesOrderEntry == null) return null;
+        int newFulfilledAmount = salesOrderEntry.getFulfilledAmount() - fulfilledAmount;
+        if (newFulfilledAmount < 0) return null;
+        salesOrderEntry.setFulfilledAmount(newFulfilledAmount);
+        entityManager.persist(salesOrderEntry);
+        return salesOrderEntry;
+    }
+
+    /**
      * Удалить позицию заказа
      * @param entryID позиции заказа
      * @return true если удалили, false если не найдена
@@ -264,6 +305,26 @@ public class SalesOrders {
         return true;
     }
 
-
+    /**
+     * Возвращает количество забронированного заказами товара (принятых обязательств по товару)
+     * @param productID товарная позиция
+     * @return количество забронированного товара по указанной позиции
+     */
+    @Transactional
+    public long getCommittedAmount(int productID) {
+        // Вычисляем Committed Stock (забронированное количество) - это сумма неисполненных
+        // позиции с указанным productID подтвержденных, но пока не исполненных заказов
+        String sqlQuery = "SELECT SUM(SalesOrderEntry.amount - SalesOrderEntry.fulfilledAmount) " +
+                "FROM SalesOrderEntry " +
+                "LEFT JOIN SalesOrder ON SalesOrder.orderID=SalesOrderEntry.orderID " +
+                "WHERE SalesOrderEntry.productID=" + productID + " " +
+                "AND SalesOrder.status >= " + SalesOrder.STATUS_CONFIRMED;
+        Long committedAmount = (Long) entityManager.createNativeQuery(sqlQuery).getSingleResult();
+        // Если что-то нашли - значит что-то забронировано
+        long committedStock = 0;
+        if (committedAmount!=null) committedStock = committedAmount;
+        if (committedStock < 0) committedStock = 0;
+        return committedStock;
+    }
 
 }
