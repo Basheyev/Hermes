@@ -7,6 +7,7 @@ import com.axiom.hermes.model.customers.SalesOrders;
 import com.axiom.hermes.model.customers.entities.SalesOrderEntry;
 import com.axiom.hermes.model.inventory.entities.StockInformation;
 import com.axiom.hermes.model.inventory.entities.StockTransaction;
+import static com.axiom.hermes.model.inventory.entities.StockTransaction.*;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -45,17 +46,27 @@ public class Inventory {
             stockInfo = createStockInformation(productID);
         }
 
-        long stockOnHand = stockInfo.getStockOnHand() + amount;
-        stockInfo.setStockOnHand(stockOnHand);
-        stockInfo.setTimestamp(System.currentTimeMillis());
-        entityManager.persist(stockInfo);
+        // Обновляем данные позиции заказа если операция возврата товара
+        if (opCode==DEBIT_SALE_RETURN) {
+            salesOrders.subtractFulfilledAmount(orderID, productID, amount);
+        }
 
+        // Проводим складскую транзакцию
         StockTransaction stockTransaction = new StockTransaction(orderID, productID,
                 StockTransaction.SIDE_DEBIT, opCode, amount, price);
         entityManager.persist(stockTransaction);
 
+        // Обновляем информацию в складской карточке
+        long stockOnHand = stockInfo.getStockOnHand() + amount;
+        long availableForSale = stockOnHand - stockInfo.getCommittedStock();
+        stockInfo.setStockOnHand(stockOnHand);
+        stockInfo.setAvailableForSale(availableForSale);
+        stockInfo.setTimestamp(System.currentTimeMillis());
+        entityManager.persist(stockInfo);
+
         return stockTransaction;
     }
+
 
     @Transactional
     private StockTransaction creditStock(int opCode, long orderID, int productID, int amount, double price) {
@@ -66,18 +77,54 @@ public class Inventory {
                 StockInformation.class, productID,
                 LockModeType.PESSIMISTIC_WRITE);
 
-        // Если складской карточки нет
+        // Если складской карточки нет, то и товара нет
         if (stockInfo==null) return null;
+        long stockOnHand = stockInfo.getStockOnHand();
+        if (stockOnHand < amount) return null;
+        long committedStock = stockInfo.getCommittedStock();
+        long availableForSale = stockInfo.getAvailableForSale();
 
-        long stockOnHand = stockInfo.getStockOnHand() - amount;
-        if (stockOnHand < 0) return null;
-        stockInfo.setStockOnHand(stockOnHand);
-        stockInfo.setTimestamp(System.currentTimeMillis());
-        entityManager.persist(stockInfo);
+        // Если это операции Продажи
+        if (opCode==CREDIT_SALE) {
+            // Обновляем данные позиции заказа
+            SalesOrderEntry salesOrderEntry = salesOrders.addFulfilledAmount(orderID, productID, amount);
+            // Если такой брони нет - продаём с AvailableForSale
+            if (salesOrderEntry==null) {
+                // Получаем забронированное заказами количество товара
+                committedStock = salesOrders.getCommittedAmount(productID);
+                // Считаем количество доступное для продажи (не забронированное)
+                availableForSale = stockInfo.getStockOnHand() - committedStock;
+                // Проверяем хватает ли незабронированных остатков
+                if (availableForSale < amount) return null;
+                // Если хватает берем цену из каталога
+                price = catalogue.getProduct(productID).getPrice();
+                // Пересчитываем остатки
+                stockOnHand -= amount;
+                availableForSale -= amount;
+            } else {
+                // Если бронь есть - продаём с CommittedStock
+                price = salesOrderEntry.getPrice();              // Берем цену из заказа
+                stockOnHand -= amount;                           // Пересчитываем общие остатки
+                committedStock -= amount;                        // Пересчитываем забронированные остатки
+            }
+        } else {
+            // Для всех остальных операций уменьшаем stockOnHand и availableForSale
+            stockOnHand -= amount;
+            availableForSale -= amount;
+            if (availableForSale < 0) availableForSale = 0;
+        }
 
+        // Проводим складскую транзакцию
         StockTransaction stockTransaction = new StockTransaction(orderID, productID,
                 StockTransaction.SIDE_CREDIT, opCode, amount, price);
         entityManager.persist(stockTransaction);
+
+        // Обновляем складскую карточку
+        stockInfo.setStockOnHand(stockOnHand);
+        stockInfo.setCommittedStock(committedStock);
+        stockInfo.setAvailableForSale(availableForSale);
+        stockInfo.setTimestamp(System.currentTimeMillis());
+        entityManager.persist(stockInfo);
 
         return stockTransaction;
     }
@@ -95,7 +142,7 @@ public class Inventory {
      */
     @Transactional
     public StockTransaction purchase(long orderID, int productID, int amount, double price) {
-        return debitStock(StockTransaction.DEBIT_PURCHASE, orderID, productID, amount, price);
+        return debitStock(DEBIT_PURCHASE, orderID, productID, amount, price);
     }
 
 
@@ -108,20 +155,7 @@ public class Inventory {
      */
     @Transactional
     public StockTransaction sale(long orderID, int productID, int amount) {
-
-        double price;
-        SalesOrderEntry salesOrderEntry = salesOrders.addFulfilledAmount(orderID, productID, amount);
-
-        // Если Заказ не был указан продаём только с available for sale
-        if (salesOrderEntry==null) {
-            StockInformation stockInformation = getStockInformation(productID);
-            if (stockInformation.getAvailableForSale() < amount) return null;
-            price = catalogue.getProduct(productID).getPrice();
-        } else {
-            price = salesOrderEntry.getPrice();
-        }
-
-        return creditStock(StockTransaction.CREDIT_SALE, orderID, productID, amount, price);
+        return creditStock(CREDIT_SALE, orderID, productID, amount, 0);
     }
 
 
@@ -134,12 +168,7 @@ public class Inventory {
      */
     @Transactional
     public StockTransaction saleReturn(long orderID, int productID, int amount, double price) {
-        StockTransaction saleReturn =
-                debitStock(StockTransaction.DEBIT_SALE_RETURN,
-                orderID, productID, amount, price);
-        if (saleReturn==null) return null;
-        salesOrders.subtractFulfilledAmount(orderID, productID, amount);
-        return saleReturn;
+        return debitStock(DEBIT_SALE_RETURN, orderID, productID, amount, price);
     }
 
 
@@ -152,7 +181,7 @@ public class Inventory {
      */
     @Transactional
     public StockTransaction purchaseReturn(long orderID, int productID, int amount, double price) {
-        return creditStock(StockTransaction.CREDIT_PURCHASE_RETURN, orderID, productID, amount, price);
+        return creditStock(CREDIT_PURCHASE_RETURN, orderID, productID, amount, price);
     }
 
 
@@ -165,7 +194,7 @@ public class Inventory {
      */
     @Transactional
     public StockTransaction writeOff(long orderID, int productID, int amount, double price) {
-        return creditStock(StockTransaction.CREDIT_WRITE_OFF, orderID, productID, amount, price);
+        return creditStock(CREDIT_WRITE_OFF, orderID, productID, amount, price);
     }
 
 
@@ -211,8 +240,6 @@ public class Inventory {
         List<StockInformation> allStocks;
         String query = "SELECT a FROM StockInformation a";
         allStocks = entityManager.createQuery(query, StockInformation.class).getResultList();
-        // fixme getAllStocks - будет давать неверную информацию по committed stock & available
-        //  нужен ли этот метод вообще?
         return allStocks;
     }
 
@@ -245,19 +272,6 @@ public class Inventory {
             stockInfo = createStockInformation(productID);
             return stockInfo;
         }
-
-        // Получаем забронированное заказами количество товара
-        long committedStock = salesOrders.getCommittedAmount(productID);
-
-        // Считаем количество доступное для продажи (не забронированное)
-        long availableForSale = stockInfo.getStockOnHand() - committedStock;
-        if (availableForSale < 0) availableForSale = 0;
-
-        stockInfo.setCommittedStock(committedStock);
-        stockInfo.setAvailableForSale(availableForSale);
-        stockInfo.setTimestamp(System.currentTimeMillis());
-        entityManager.persist(stockInfo);
-
         return stockInfo;
     }
 
