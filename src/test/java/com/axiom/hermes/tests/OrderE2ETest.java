@@ -7,6 +7,10 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.postgresql.core.v3.ConnectionFactoryImpl;
+
+import java.util.LinkedHashMap;
+import java.util.List;
 
 import static com.axiom.hermes.model.customers.entities.SalesOrder.STATUS_CONFIRMED;
 import static com.axiom.hermes.model.customers.entities.SalesOrder.STATUS_NEW;
@@ -37,9 +41,7 @@ public class OrderE2ETest {
     private static int initialStock;
     private static int orderID;
     private static int customerID;
-    private static String mobile;
     private static int addedEntryID;
-    private static int availableForSale;
 
     //---------------------------------------------------------------------------------------------------
 
@@ -187,7 +189,115 @@ public class OrderE2ETest {
         LOG.info("ProductID="+ productID + " stock information:\n" + response);
 
     }
+
     //--------------------------------------------------------------------------------------------------
+    @Test
+    @Order(7)
+    public void checkAvailableForSale() {
+        int availableForSale = given()
+            .when()
+                .get("/inventory/getStockInformation?productID=" + productID)
+            .then()
+            .assertThat()
+                .statusCode(200)
+                .body("productID", equalTo(productID))
+                .body("stockOnHand", equalTo(initialStock + purchaseAmount))
+                .body("committedStock", equalTo(buyAmount))
+                .body("availableForSale", equalTo(initialStock + purchaseAmount - buyAmount))
+            .extract().jsonPath().getInt("availableForSale");
+
+        String response =
+                given()
+                .when()
+                    .get("/inventory/sale?productID=" + productID + "&amount=" + availableForSale +
+                            "&price=30")
+                .then()
+                    .assertThat()
+                    .statusCode(200)
+                .extract().asString();
+        LOG.info(response);
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    @Test
+    @Order(8)
+    public void checkFulfillment() {
+
+        // Взять список подтвержденных заказов и взять самый ранний заказ
+        List<LinkedHashMap<String, Object>> ordersList =
+        given()
+        .when()
+            .get("/salesOrders?status=" + STATUS_CONFIRMED)
+        .then()
+            .statusCode(200)
+        .extract().jsonPath().getList("$");
+        LOG.info("Get all confirmed orders - total:" + ordersList.size());
+
+        // взять очередной заказ требующий исполнения
+        int myOrderID  = (Integer) ordersList.get(0).get("orderID");
+        LOG.info("Retrieving orderID=" + myOrderID);
+
+        // получить список позиций требующих исполнения
+        List<LinkedHashMap<String, Object>> entriesList =
+            given()
+            .when()
+                .get("/salesOrders/getOrderEntries?orderID=" + myOrderID)
+            .then()
+                .statusCode(200)
+            .extract().jsonPath().getList("$");
+        LOG.info("OrderID=" + myOrderID + " has " + entriesList.size() + " items");
+
+        int entryID, entryProductID, amount;
+        float price;
+
+        // осуществить отгрузки позиций
+        for (LinkedHashMap<String, Object> entry:entriesList) {
+
+            entryID = (Integer) entry.get("entryID");
+            entryProductID = (Integer) entry.get("productID");
+            amount = (Integer) entry.get("amount");
+            price = (Float) entry.get("price");
+
+            LOG.info("EntryID=" + entryID +
+                     " productID=" + entryProductID +
+                     " amount=" + amount +
+                     " price=" + price);
+
+            String response =
+                    given()
+                    .when()
+                        .get("/inventory/sale?orderID=" + orderID +
+                                        "&productID=" + entryProductID +
+                                        "&amount=" + amount)
+                    .then()
+                        .assertThat()
+                        .statusCode(200)
+                        .body("productID", equalTo(entryProductID))
+                        .body("amount", equalTo(amount))
+                    .extract().asString();
+            LOG.info("Inventory transaction:\n" + response);
+
+            // удостовериться в исполнении заказа
+            if (entriesList.size() > 0) {
+                response =
+                given()
+                .when()
+                    .get("/inventory/getStockInformation?productID=" + entryProductID)
+                .then()
+                    .assertThat()
+                    .statusCode(200)
+                    .body("productID", equalTo(productID))
+                    .body("committedStock", equalTo(0))
+                    .body("availableForSale", equalTo(0))
+                .extract().asString();
+                LOG.info("Stock information:\n" + response);
+            }
+        }
+
+
+    }
+    //--------------------------------------------------------------------------------------------------
+
     @Test
     @Order(15)
     public void cleanup() {
@@ -210,19 +320,30 @@ public class OrderE2ETest {
                 when().get("/customers/removeCustomer?customerID=" + customerID).
                 then().statusCode(200).extract().asString();
 
-        String response =
-                given()
+        int availableForSale = given()
                 .when()
-                    .get("/inventory/writeOff?productID=" + productID +
-                           "&amount=" + purchaseAmount + "&price=20")
+                .get("/inventory/getStockInformation?productID=" + productID)
                 .then()
-                    .assertThat()
-                    .statusCode(200)
-                    .body("productID", equalTo(productID))
-                    .body("amount", equalTo(purchaseAmount))
-                    .body("price", equalTo(20f))
-                .extract().asString();
-        LOG.info(response);
+                .assertThat()
+                .statusCode(200)
+                .body("productID", equalTo(productID))
+                .extract().jsonPath().getInt("availableForSale");
+
+        if (availableForSale>0) {
+            String response =
+                    given()
+                            .when()
+                            .get("/inventory/writeOff?productID=" + productID +
+                                    "&amount=" + availableForSale + "&price=20")
+                            .then()
+                            .assertThat()
+                            .statusCode(200)
+                            .body("productID", equalTo(productID))
+                            .body("amount", equalTo(availableForSale))
+                            .body("price", equalTo(20f))
+                            .extract().asString();
+            LOG.info(response);
+        }
     }
 
 }

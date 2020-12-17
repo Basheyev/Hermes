@@ -38,12 +38,16 @@ public class SalesOrders {
     public List<SalesOrder> getAllOrders(long startTime, long endTime, int status) {
         List<SalesOrder> customerOrders;
         String query = "SELECT a FROM SalesOrder a";
-        if (startTime > 0 || endTime > 0) {
-            query += " WHERE a.timestamp BETWEEN " + startTime + " AND " + endTime;
+        if (startTime > 0 || endTime > 0 || status > 0) {
+            query += " WHERE ";
+            if (startTime > 0 || endTime > 0) {
+                query += "a.timestamp BETWEEN " + startTime + " AND " + endTime;
+                if (status > 0) query += " AND a.status=" + status;
+            } else if (status > 0) {
+                query += "a.status=" + status;
+            }
         }
-        if (status > 0) {
-            query += " AND a.status=" + status;
-        }
+        query += " ORDER BY a.timestamp";
         customerOrders = entityManager.createQuery(query, SalesOrder.class).getResultList();
         return customerOrders;
     }
