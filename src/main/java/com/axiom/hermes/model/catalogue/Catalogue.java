@@ -3,6 +3,7 @@ package com.axiom.hermes.model.catalogue;
 import com.axiom.hermes.model.catalogue.entities.Product;
 import com.axiom.hermes.model.catalogue.entities.ProductImage;
 import com.axiom.hermes.model.inventory.Inventory;
+import com.axiom.hermes.model.utils.Utils;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -115,8 +116,9 @@ public class Catalogue {
         String sqlQuery = "SELECT " +
                 "(SELECT COUNT(*) FROM SalesOrderEntry WHERE SalesOrderEntry.productID=" + productID + ") +" +
                 "(SELECT COUNT(*) FROM StockTransaction WHERE StockTransaction.productID=" + productID + ")";
-        BigInteger usageCount = (BigInteger) entityManager.createNativeQuery(sqlQuery).getSingleResult();
-        if (usageCount.longValue() > 0) return false;
+        long usageCount = Utils.asLong(entityManager.createNativeQuery(sqlQuery).getSingleResult());
+        // Если продукт используется в заказах или транзакциях - удалять нельзя
+        if (usageCount > 0) return false;
         // Если нигде не используется тогда удаляем связанные данные: изображения и складские карточки
         entityManager.createQuery("DELETE FROM ProductImage a WHERE a.productID=" + productID).executeUpdate();
         entityManager.createQuery("DELETE FROM StockInformation a WHERE a.productID=" + productID).executeUpdate();

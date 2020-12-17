@@ -6,6 +6,7 @@ import com.axiom.hermes.model.customers.entities.Customer;
 import com.axiom.hermes.model.customers.entities.SalesOrder;
 import com.axiom.hermes.model.customers.entities.SalesOrderEntry;
 import com.axiom.hermes.model.inventory.Inventory;
+import com.axiom.hermes.model.utils.Utils;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -212,7 +213,7 @@ public class SalesOrders {
             // Если такой товарной позиции нет - создаем
             entry = new SalesOrderEntry(orderID, productID, amount, product.getPrice());
         } else {
-            // Если такая товарная позиция есть есть - суммируем количество текущее и новое
+            // Если такая товарная позиция есть - суммируем количество текущее и новое
             long totalAmount = entry.getAmount() + amount;
             entry.setAmount(totalAmount);
             // Обновляем на текущую цену
@@ -335,14 +336,8 @@ public class SalesOrders {
                 "AND SalesOrder.status >= " + SalesOrder.STATUS_CONFIRMED;
         Object result = entityManager.createNativeQuery(sqlQuery).getSingleResult();
 
-        long committedStock = 0;
-        // Если что-то нашли - значит что-то забронировано
-        if (result!=null) {
-            // Если поле INTEGER, то тип SUM() - LONG, а если поле LONG - BigDecimal
-            if (result instanceof BigDecimal) committedStock = ((BigDecimal) result).longValue();
-            if (result instanceof Long) committedStock = (Long) result;
-            if (committedStock < 0) committedStock = 0;
-        }
+        // Если не 0 - значит что-то забронировано
+        long committedStock = Utils.asLong(result);
 
         return committedStock;
     }

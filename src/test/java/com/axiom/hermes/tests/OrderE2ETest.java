@@ -32,7 +32,6 @@ public class OrderE2ETest {
     private static int initialStock;
     private static int orderID;
     private static int customerID;
-    private static int addedEntryID;
 
     //---------------------------------------------------------------------------------------------------
 
@@ -151,10 +150,9 @@ public class OrderE2ETest {
     @Test
     @Order(5)
     public void addOrderEntries() {
-        addedEntryID =
-                given().
+        int addedEntryID = given().
                 when().get("/salesOrders/addOrderEntry?orderID=" + orderID +
-                        "&productID=" + productID + "&amount=13").
+                "&productID=" + productID + "&amount=13").
                 then().statusCode(200).assertThat()
                 .body("productID", equalTo(productID))
                 .body("amount", equalTo(13))
@@ -196,7 +194,7 @@ public class OrderE2ETest {
                 .statusCode(200)
                 .body("productID", equalTo(productID))
                 .body("stockOnHand", equalTo(initialStock + purchaseAmount))
-                .body("committedStock", equalTo(buyAmount)) // fixme
+                .body("committedStock", equalTo(buyAmount))
                 .body("availableForSale", equalTo(initialStock + purchaseAmount - buyAmount))
             .extract().asString();
 
@@ -312,7 +310,7 @@ public class OrderE2ETest {
     //--------------------------------------------------------------------------------------------------
 
     @Test
-    @Order(15)
+    @Order(9)
     public void cleanup() {
 
         // Изменить статус заказа на удаляемый
@@ -359,7 +357,7 @@ public class OrderE2ETest {
         }
     }
 
-
+    //--------------------------------------------------------------------------------------------------
     private String makePretty(String response) {
         StringBuffer sb = new StringBuffer(response);
         for (int i=0; i<sb.length(); i++) {
