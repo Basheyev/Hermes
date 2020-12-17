@@ -104,7 +104,7 @@ public class SalesOrdersServiceTest {
 
     @Test
     @Order(7)
-    public void updateOrder() {
+    public void changeOrderStatus() {
         given().
         when().get("/salesOrders/changeStatus?orderID=" + addedOrderID + "&status=2").
         then().statusCode(200).assertThat()

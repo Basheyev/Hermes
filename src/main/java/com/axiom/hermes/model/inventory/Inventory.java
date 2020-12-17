@@ -278,11 +278,29 @@ public class Inventory {
         return stockInfo;
     }
 
+    @Transactional
+    public StockInformation updateCommittedStockInformation(int productID) {
+        // Поднимаем складскую карточку товара
+        StockInformation stockInfo = entityManager.find(
+                StockInformation.class, productID,
+                LockModeType.PESSIMISTIC_WRITE);
+
+        // Обновляем информацию в складской карточке
+        long committedStock = salesOrders.getCommittedAmount(productID);
+        long availableForSale = stockInfo.getStockOnHand() - committedStock;
+        if (availableForSale < 0) availableForSale = 0;
+        stockInfo.setCommittedStock(committedStock);
+        stockInfo.setAvailableForSale(availableForSale);
+        stockInfo.setTimestamp(System.currentTimeMillis());
+        entityManager.persist(stockInfo);
+        return stockInfo;
+    }
 
     /**
      * Возвращает список складских карточек товарных позиций по которым требуется пополнение запасов
      * @return список складских карточек товарных позиций требующих пополнения запасов
      */
+    @Transactional
     public List<StockInformation> getReplenishmentStocks() {
         List<StockInformation> stocks;
         String query = "SELECT a FROM StockInformation a WHERE a.stockOnHand <= a.reorderPoint";

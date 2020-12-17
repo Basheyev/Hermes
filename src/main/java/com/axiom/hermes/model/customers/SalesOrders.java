@@ -2,6 +2,7 @@ package com.axiom.hermes.model.customers;
 
 import com.axiom.hermes.model.catalogue.Catalogue;
 import com.axiom.hermes.model.catalogue.entities.Product;
+import com.axiom.hermes.model.customers.entities.Customer;
 import com.axiom.hermes.model.customers.entities.SalesOrder;
 import com.axiom.hermes.model.customers.entities.SalesOrderEntry;
 import com.axiom.hermes.model.inventory.Inventory;
@@ -12,6 +13,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
 import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
+import java.math.BigInteger;
 import java.util.List;
 
 /**
@@ -24,6 +26,7 @@ public class SalesOrders {
 
     @Inject Catalogue catalogue;
     @Inject Customers customers;
+    @Inject Inventory inventory;
 
     // todo Нужна настройка - принимать ли заказы где заказ товара больше текущих/доступных остатков
 
@@ -74,7 +77,8 @@ public class SalesOrders {
     @Transactional
     public SalesOrder addOrder(int customerID) {
         if (customerID < 0) return null;
-        if (customers.getCustomer(customerID)!=null) return null;
+        Customer customer = customers.getCustomer(customerID);
+        if (customer==null) return null;
         SalesOrder salesOrder = new SalesOrder(customerID);
         entityManager.persist(salesOrder);
         return salesOrder;
@@ -104,6 +108,11 @@ public class SalesOrders {
         if (salesOrder.getStatus()==status) return salesOrder;
         salesOrder.setStatus(status);
         entityManager.persist(salesOrder);
+
+        List<SalesOrderEntry> entries = getOrderEntries(orderID);
+        for (SalesOrderEntry entry:entries) {
+            inventory.updateCommittedStockInformation(entry.getProductID());
+        }
         return salesOrder;
     }
 
@@ -319,11 +328,17 @@ public class SalesOrders {
                 "LEFT JOIN SalesOrder ON SalesOrder.orderID=SalesOrderEntry.orderID " +
                 "WHERE SalesOrderEntry.productID=" + productID + " " +
                 "AND SalesOrder.status >= " + SalesOrder.STATUS_CONFIRMED;
-        Long committedAmount = (Long) entityManager.createNativeQuery(sqlQuery).getSingleResult();
-        // Если что-то нашли - значит что-то забронировано
+        Object result = entityManager.createNativeQuery(sqlQuery).getSingleResult();
+
         long committedStock = 0;
-        if (committedAmount!=null) committedStock = committedAmount;
-        if (committedStock < 0) committedStock = 0;
+        // Если что-то нашли - значит что-то забронировано
+        if (result!=null) {
+            // Не знаю почему возваращаемый тип SUM при разных условиях разный, но обходим
+            if (result instanceof BigInteger) committedStock = ((BigInteger) result).longValue();
+            if (result instanceof Long) committedStock = (Long) result;
+            if (committedStock < 0) committedStock = 0;
+        }
+
         return committedStock;
     }
 
