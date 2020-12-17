@@ -31,7 +31,7 @@ public class Inventory {
     // Базовые операции в журнале складского учёта - тут основная бизнес логика и производительность
     //-----------------------------------------------------------------------------------------------------
     @Transactional
-    private StockTransaction debitStock(int opCode, long orderID, int productID, int amount, double price) {
+    private StockTransaction debitStock(int opCode, long orderID, long productID, long amount, double price) {
         if (orderID < 0 || productID < 0 || amount <= 0 || price < 0) return null;
 
         // Поднимаем складскую карточку товара
@@ -72,7 +72,7 @@ public class Inventory {
 
 
     @Transactional
-    private StockTransaction creditStock(int opCode, long orderID, int productID, int amount, double price) {
+    private StockTransaction creditStock(int opCode, long orderID, long productID, long amount, double price) {
         if (orderID < 0 || productID < 0 || amount <= 0 || price < 0) return null;
 
         // Поднимаем складскую карточку товара
@@ -145,7 +145,7 @@ public class Inventory {
      * @return true - если проведена, false - если нет
      */
     @Transactional
-    public StockTransaction purchase(long orderID, int productID, int amount, double price) {
+    public StockTransaction purchase(long orderID, long productID, long amount, double price) {
         return debitStock(DEBIT_PURCHASE, orderID, productID, amount, price);
     }
 
@@ -157,7 +157,7 @@ public class Inventory {
      * @return true - если проведена, false - если нет товара
      */
     @Transactional
-    public StockTransaction sale(long orderID, int productID, int amount) {
+    public StockTransaction sale(long orderID, long productID, long amount) {
         return creditStock(CREDIT_SALE, orderID, productID, amount, 0);
     }
 
@@ -169,7 +169,7 @@ public class Inventory {
      * @return true - если проведена, false - если нет
      */
     @Transactional
-    public StockTransaction saleReturn(long orderID, int productID, int amount, double price) {
+    public StockTransaction saleReturn(long orderID, long productID, long amount, double price) {
         return debitStock(DEBIT_SALE_RETURN, orderID, productID, amount, price);
     }
 
@@ -181,7 +181,7 @@ public class Inventory {
      * @return true - если проведена, false - если нет
      */
     @Transactional
-    public StockTransaction purchaseReturn(long orderID, int productID, int amount, double price) {
+    public StockTransaction purchaseReturn(long orderID, long productID, long amount, double price) {
         return creditStock(CREDIT_PURCHASE_RETURN, orderID, productID, amount, price);
     }
 
@@ -193,7 +193,7 @@ public class Inventory {
      * @return true - если проведена, false - если нет
      */
     @Transactional
-    public StockTransaction writeOff(long orderID, int productID, int amount, double price) {
+    public StockTransaction writeOff(long orderID, long productID, long amount, double price) {
         return creditStock(CREDIT_WRITE_OFF, orderID, productID, amount, price);
     }
 
@@ -220,7 +220,7 @@ public class Inventory {
      * @param endTime по какое время
      * @return список складских транзакций по указнной товарной позиции в указанный период
      */
-    public List<StockTransaction> getProductTransactions(int productID, long startTime, long endTime) {
+    public List<StockTransaction> getProductTransactions(long productID, long startTime, long endTime) {
         List<StockTransaction> productTransactions;
         String query = "SELECT a FROM StockTransaction a WHERE a.productID=" + productID;
         if (startTime>0 || endTime > 0) {
@@ -253,7 +253,7 @@ public class Inventory {
      * @return складская карточка
      */
     @Transactional
-    public StockInformation createStockInformation(int productID) {
+    public StockInformation createStockInformation(long productID) {
         StockInformation stockInfo = new StockInformation(productID);
         entityManager.persist(stockInfo);
         return stockInfo;
@@ -266,7 +266,7 @@ public class Inventory {
      * @return складская карточка
      */
     @Transactional
-    public StockInformation getStockInformation(int productID) {
+    public StockInformation getStockInformation(long productID) {
         StockInformation stockInfo = entityManager.find(StockInformation.class, productID);
         // Если складской карточки нет, то создаём её если такая товарная позиция есть
         if (stockInfo==null) {
@@ -279,7 +279,7 @@ public class Inventory {
     }
 
     @Transactional
-    public StockInformation updateCommittedStockInformation(int productID) {
+    public StockInformation updateCommittedStockInformation(long productID) {
         // Поднимаем складскую карточку товара
         StockInformation stockInfo = entityManager.find(
                 StockInformation.class, productID,

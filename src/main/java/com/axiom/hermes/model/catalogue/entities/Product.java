@@ -12,8 +12,8 @@ import javax.persistence.Id;
 public class Product {
     @Id
     @GeneratedValue
-    public int productID;                  // ID товара
-    private int categoryID;                // ID категории товара
+    public long productID;                 // ID товара
+    private long categoryID;               // ID категории товара
     private String vendorCode;             // Артикул товара
     private String name;                   // Наименование товара
     private String description;            // Описание товара
@@ -32,19 +32,19 @@ public class Product {
         this.price = price;
     }
 
-    public int getProductID() {
+    public long getProductID() {
         return productID;
     }
 
-    public void setProductID(int productID) {
+    public void setProductID(long productID) {
         this.productID = productID;
     }
 
-    public int getCategoryID() {
+    public long getCategoryID() {
         return categoryID;
     }
 
-    public void setCategoryID(int categoryID) {
+    public void setCategoryID(long categoryID) {
         this.categoryID = categoryID;
     }
 

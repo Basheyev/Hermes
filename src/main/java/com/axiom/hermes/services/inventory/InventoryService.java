@@ -46,8 +46,8 @@ public class InventoryService {
     @GET
     @Path("/purchase")
     public Response purchase(@QueryParam("orderID") long orderID,
-                             @QueryParam("productID") int productID,
-                             @QueryParam("amount") int amount,
+                             @QueryParam("productID") long productID,
+                             @QueryParam("amount") long amount,
                              @QueryParam("price") double price) {
         StockTransaction purchase = inventory.purchase(orderID, productID, amount, price);
         if (purchase==null) return Response.status(Response.Status.NOT_FOUND).build();
@@ -57,8 +57,8 @@ public class InventoryService {
     @GET
     @Path("/saleReturn")
     public Response saleReturn(@QueryParam("orderID") long orderID,
-                               @QueryParam("productID") int productID,
-                               @QueryParam("amount") int amount,
+                               @QueryParam("productID") long productID,
+                               @QueryParam("amount") long amount,
                                @QueryParam("price") double price) {
         StockTransaction saleReturn = inventory.saleReturn(orderID, productID, amount, price);
         if (saleReturn==null) return Response.status(Response.Status.NOT_FOUND).build();
@@ -68,8 +68,8 @@ public class InventoryService {
     @GET
     @Path("/sale")
     public Response sale(@QueryParam("orderID") long orderID,
-                         @QueryParam("productID") int productID,
-                         @QueryParam("amount") int amount) {
+                         @QueryParam("productID") long productID,
+                         @QueryParam("amount") long amount) {
         StockTransaction sale = inventory.sale(orderID, productID, amount);
         if (sale==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(sale).build();
@@ -78,8 +78,8 @@ public class InventoryService {
     @GET
     @Path("/purchaseReturn")
     public Response purchaseReturn(@QueryParam("orderID") long orderID,
-                                   @QueryParam("productID") int productID,
-                                   @QueryParam("amount") int amount,
+                                   @QueryParam("productID") long productID,
+                                   @QueryParam("amount") long amount,
                                    @QueryParam("price") double price) {
         StockTransaction purchaseReturn = inventory.purchaseReturn(orderID, productID, amount, price);
         if (purchaseReturn==null) return Response.status(Response.Status.NOT_FOUND).build();
@@ -89,8 +89,8 @@ public class InventoryService {
     @GET
     @Path("/writeOff")
     public Response writeOff(@QueryParam("orderID") long orderID,
-                             @QueryParam("productID") int productID,
-                             @QueryParam("amount") int amount,
+                             @QueryParam("productID") long productID,
+                             @QueryParam("amount") long amount,
                              @QueryParam("price") double price) {
         StockTransaction writeOff = inventory.writeOff(orderID, productID, amount, price);
         if (writeOff==null) return Response.status(Response.Status.NOT_FOUND).build();
@@ -120,7 +120,7 @@ public class InventoryService {
     @GET
     @Path("/getProductTransactions")
     public Response getProductTransactions(
-            @QueryParam("productID") int productID,
+            @QueryParam("productID") long productID,
             @QueryParam("startTime") long startTime,
             @QueryParam("endTime") long endTime) {
         List<StockTransaction> productTransactions;
@@ -131,7 +131,7 @@ public class InventoryService {
 
     @GET
     @Path("/getStockInformation")
-    public Response getStockInformation(@QueryParam("productID") int productID) {
+    public Response getStockInformation(@QueryParam("productID") long productID) {
         StockInformation stockInfo = inventory.getStockInformation(productID);
         if (stockInfo==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(stockInfo).build();

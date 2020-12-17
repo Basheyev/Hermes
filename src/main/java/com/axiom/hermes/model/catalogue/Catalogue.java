@@ -56,7 +56,7 @@ public class Catalogue {
      * @return карточка товарной позиции
      */
     @Transactional
-    public Product getProduct(int productID) {
+    public Product getProduct(long productID) {
         Product product = entityManager.find(Product.class, productID);
         if (product==null) return null;
         return product;
@@ -108,7 +108,7 @@ public class Catalogue {
      * @return true если удалена, false если не удалена (нет такого продукта или товарная позиция используется)
      */
     @Transactional
-    public boolean removeProduct(int productID) {
+    public boolean removeProduct(long productID) {
         Product product = entityManager.find(Product.class, productID);
         if (product==null) return false;
         // Если хоть где-то используется в заказах или транзакциях нельзя удалять
@@ -154,7 +154,7 @@ public class Catalogue {
      * @return JPEG с миниатюрным изображением
      */
     @Transactional
-    public byte[] getProductThumbnail(int productID) {
+    public byte[] getProductThumbnail(long productID) {
         try {
             String query = "SELECT a.thumbnail FROM ProductImage a WHERE a.productID=" + productID;
             return entityManager.createQuery(query, byte[].class).getSingleResult();
@@ -165,7 +165,7 @@ public class Catalogue {
     }
 
     @Transactional
-    public ProductImage getProductImage(int productID) {
+    public ProductImage getProductImage(long productID) {
         try {
             String query = "SELECT a FROM ProductImage a WHERE a.productID=" + productID;
             return entityManager.createQuery(query, ProductImage.class).getSingleResult();

@@ -12,7 +12,7 @@ import javax.persistence.*;
 })
 public class Customer {
     @Id @GeneratedValue
-    private int customerID;                    // ID клиента
+    private long customerID;                    // ID клиента
     private String mobile;                     // Мобильный номер
     private String businessID;                 // БИН/ИИН клиента
     private String name;                       // Имя клиента (ФИО/ИП/ТОО)
@@ -23,11 +23,11 @@ public class Customer {
 
     public Customer() {}
 
-    public int getCustomerID() {
+    public long getCustomerID() {
         return customerID;
     }
 
-    public void setCustomerID(int customerID) {
+    public void setCustomerID(long customerID) {
         this.customerID = customerID;
     }
 

@@ -13,7 +13,7 @@ public class UserRole {
     public static final int ACCESS_CUSTOMERS = 4;        // 0000100
     public static final int ACCESS_ALL = 0xFFFFFFFF;     // 1111111
     //------------------------------------------------------------------------
-    public int roleID;
-    public int rights;
+    public long roleID;
+    public long rights;
 
 }

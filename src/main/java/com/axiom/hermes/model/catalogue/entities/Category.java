@@ -10,8 +10,8 @@ import javax.persistence.Id;
 @Entity
 public class Category {
     @Id  @GeneratedValue
-    public int categoryID;              // Код категории товара
-    public int parentID;                // Код родительской категории
+    public long categoryID;              // Код категории товара
+    public long parentID;                // Код родительской категории
     public String name;                 // Наименование категории товара
     public String description;          // Описание категории товара
     public int sortOrder;               // Порядок сортировки

@@ -39,7 +39,7 @@ public class Customers {
      * @return карточка клиента
      */
     @Transactional
-    public Customer getCustomer(int customerID) {
+    public Customer getCustomer(long customerID) {
         if (customerID < 0) return null;
         return entityManager.find(Customer.class, customerID);
     }
@@ -103,7 +103,7 @@ public class Customers {
      * @return true если удален, false если не найден или есть заказы с его участием
      */
     @Transactional
-    public boolean removeCustomer(int customerID) {
+    public boolean removeCustomer(long customerID) {
         // Ищем такого клиента
         Customer customer = entityManager.find(Customer.class, customerID);
         if (customer==null) return false;

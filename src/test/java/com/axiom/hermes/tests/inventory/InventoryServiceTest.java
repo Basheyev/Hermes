@@ -17,7 +17,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class InventoryServiceTest {
 
     private static final Logger LOG = Logger.getLogger(InventoryServiceTest.class);
-    public static final int productID = 1;
+
+    public static int customerID;
+    public static int productID;
     public static int initialStock;
 
     @Test
@@ -32,6 +34,53 @@ public class InventoryServiceTest {
         .extract().asString();
 
         LOG.info(response);
+
+
+        // Добавить пользователя
+        customerID =
+                given()
+                        .header("Content-Type", "application/json")
+                        .body("{\n" +
+                                "    \"mobile\": \"+77056004927\",\n" +
+                                "    \"businessID\": \"850415308450\",\n" +
+                                "    \"name\": \"Болат Башеев\",\n" +
+                                "    \"address\": \"Улы дала 5/2, кв. 248\",\n" +
+                                "    \"city\": \"Нур-Султан\",\n" +
+                                "    \"country\": \"Казахстан\",\n" +
+                                "    \"verified\": true\n" +
+                                "}")
+                        .when()
+                        .post("/customers/addCustomer")
+                        .then()
+                        .statusCode(200)
+                        .assertThat()
+                        .body("mobile", equalTo("+77056004927"))
+                        .body("businessID", equalTo("850415308450"))
+                        .extract().path("customerID");
+
+        LOG.info("Customer created customerID=" + customerID);
+
+        // Добавить продукт
+        productID =
+                given()
+                        .header("Content-Type", "application/json")
+                        .body("{\n" +
+                                "    \"name\": \"CUP OF COFFEE\",\n" +
+                                "    \"description\": \"MACCOFFEE\",\n" +
+                                "    \"price\": 5,\n" +
+                                "    \"vendorCode\": \"CCMAC\"\n" +
+                                "}")
+                        .when()
+                        .post("/catalogue/addProduct")
+                        .then()
+                        .statusCode(200)
+                        .assertThat()
+                        .body("vendorCode", equalTo("CCMAC"))
+                        .body("description", equalTo("MACCOFFEE"))
+                        .extract().path("productID");
+
+        LOG.info("Product created productID=" + productID);
+
 
         initialStock = given()
                 .when()
@@ -162,4 +211,13 @@ public class InventoryServiceTest {
         LOG.info("Final stock: " + finalStock);
     }
 
+    @Test
+    @Order(9)
+    public void removeCustomer() {
+        String response =
+                given().
+                        when().get("/customers/removeCustomer?customerID=" + customerID).
+                        then().statusCode(200).extract().asString();
+        LOG.info("CustomerID=" + customerID + " deleted response=" + response);
+    }
 }

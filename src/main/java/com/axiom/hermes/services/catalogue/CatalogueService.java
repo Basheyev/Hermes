@@ -69,13 +69,13 @@ public class CatalogueService {
 
     /**
      * Возвращает информацию по товарной позици по указнному ID
-     * @param id товарной позиции
+     * @param productID товарной позиции
      * @return информация товарной позиции
      */
     @GET
     @Path("/getProduct")
-    public Response getProduct(@QueryParam("productID") int id) {
-        Product product = catalogue.getProduct(id);
+    public Response getProduct(@QueryParam("productID") long productID) {
+        Product product = catalogue.getProduct(productID);
         if (product==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(product).build();
     }
@@ -111,7 +111,7 @@ public class CatalogueService {
 
     @GET
     @Path("/removeProduct")
-    public Response removeProduct(@QueryParam("productID") int productID) {
+    public Response removeProduct(@QueryParam("productID") long productID) {
         boolean result = catalogue.removeProduct(productID);
         if (!result) return Response.status(Response.Status.FORBIDDEN).build();
         return Response.ok().build();
@@ -124,7 +124,7 @@ public class CatalogueService {
      */
     @GET
     @Path("/downloadThumbnail")
-    public Response downloadThumbnail(@QueryParam("productID") int productID) {
+    public Response downloadThumbnail(@QueryParam("productID") long productID) {
         byte[] bytes = catalogue.getProductThumbnail(productID);
         if (bytes==null) {
             LOG.info("Thumbnail image of productID=" + productID + " is not found.");
@@ -148,7 +148,7 @@ public class CatalogueService {
      */
     @GET
     @Path("/downloadImage")
-    public Response downloadImage(@QueryParam("productID") int productID) {
+    public Response downloadImage(@QueryParam("productID") long productID) {
         ProductImage productImage = catalogue.getProductImage(productID);
         if (productImage==null) return Response.status(HTTP_NOT_FOUND, "imageID=" + productID + " not found").build();
         byte[] imageBytes = productImage.getImage();
@@ -185,7 +185,7 @@ public class CatalogueService {
             //------------------------------------------------------------------------------------
             List<InputPart> productInputParts = multipartForm.get("productID");
             if (productInputParts.size() != 1) return Response.status(HTTP_BAD_REQUEST).build();
-            int productID = parseProductID(productInputParts);
+            long productID = parseProductID(productInputParts);
             if (productID==INVALID) return Response.status(HTTP_BAD_REQUEST).build();
             //------------------------------------------------------------------------------------
             // Получаем из формы file (проверяем что файл один)
@@ -248,12 +248,12 @@ public class CatalogueService {
      * @param productInputParts заголовок части формы
      * @return productID товарной позиции
      */
-    private int parseProductID(List<InputPart> productInputParts) {
-        int productID = INVALID;
+    private long parseProductID(List<InputPart> productInputParts) {
+        long productID = INVALID;
         try {
             if (productInputParts != null && productInputParts.size() > 0) {
                 String value = productInputParts.get(0).getBody(String.class, null);
-                productID = Integer.parseInt(value);
+                productID = Long.parseLong(value);
             }
         } catch (Exception e) {
             // e.printStackTrace();

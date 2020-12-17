@@ -9,7 +9,7 @@ import javax.persistence.Id;
 @Entity
 public class StockInformation {
     @Id
-    private int productID;                 // Код товара
+    private long productID;                 // Код товара
     private long stockOnHand;              // Всего товара в наличии
     private long committedStock;           // Объем принятого, но не исполненного заказа на товар
     private long availableForSale;         // Всего доступного для продажи товара
@@ -18,7 +18,7 @@ public class StockInformation {
 
     public StockInformation() {}
 
-    public StockInformation(int productID) {
+    public StockInformation(long productID) {
         this.productID = productID;
         this.stockOnHand = 0;
         this.committedStock = 0;
@@ -26,11 +26,11 @@ public class StockInformation {
         this.reorderPoint = 0;
     }
 
-    public int getProductID() {
+    public long getProductID() {
         return productID;
     }
 
-    public void setProductID(int productID) {
+    public void setProductID(long productID) {
         this.productID = productID;
     }
 

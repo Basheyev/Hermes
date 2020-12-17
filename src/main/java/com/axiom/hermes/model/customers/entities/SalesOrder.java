@@ -33,7 +33,7 @@ public class SalesOrder {
     @Id
     @GeneratedValue
     private long orderID;                    // Код заказа
-    private int customerID;                  // Код клиента
+    private long customerID;                  // Код клиента
     private long orderTime;                  // Время создания заказа
     private int status;                      // Статус заказа
     private long timestamp;                  // Время изменения заказа
@@ -41,7 +41,7 @@ public class SalesOrder {
 
     public SalesOrder() { }
 
-    public SalesOrder(int customerID) {
+    public SalesOrder(long customerID) {
         this.customerID = customerID;
         this.orderTime = System.currentTimeMillis();
         this.status = STATUS_NEW;
@@ -57,11 +57,11 @@ public class SalesOrder {
         this.orderID = orderID;
     }
 
-    public int getCustomerID() {
+    public long getCustomerID() {
         return customerID;
     }
 
-    public void setCustomerID(int customerID) {
+    public void setCustomerID(long customerID) {
         this.customerID = customerID;
     }
 

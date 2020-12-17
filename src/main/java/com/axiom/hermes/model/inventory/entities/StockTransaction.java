@@ -36,19 +36,19 @@ public class StockTransaction {
     @GeneratedValue
     public long transactionID;       // код транзакции
     public long timestamp;           // время транзакции в миллисекундах
-    public int productID;            // код товара
+    public long productID;           // код товара
     public int side;                 // дебет/кредит (приход/расход)
     public int operationCode;        // код операции
-    public int amount;               // количество товара
+    public long amount;              // количество товара
     public double price;             // цена товара
     public long orderID;             // код заказа как основание (покупки/продажи - зависит от поля side)
-    public int userID;               // код пользователя внесшего запись
+    public long userID;              // код пользователя внесшего запись
     public boolean deleted;          // транзакция помечена как удалененная
 
 
     public StockTransaction() {}
 
-    public StockTransaction(long orderID, int productID, int side, int opCode, int amount, double price) {
+    public StockTransaction(long orderID, long productID, int side, int opCode, long amount, double price) {
         this.orderID = orderID;
         this.timestamp = System.currentTimeMillis();
         this.productID = productID;
@@ -75,11 +75,11 @@ public class StockTransaction {
         this.timestamp = timestamp;
     }
 
-    public int getProductID() {
+    public long getProductID() {
         return productID;
     }
 
-    public void setProductID(int productID) {
+    public void setProductID(long productID) {
         this.productID = productID;
     }
 
@@ -99,7 +99,7 @@ public class StockTransaction {
         this.operationCode = operationCode;
     }
 
-    public int getAmount() {
+    public long getAmount() {
         return amount;
     }
 
@@ -123,11 +123,11 @@ public class StockTransaction {
         this.orderID = orderID;
     }
 
-    public int getUserID() {
+    public long getUserID() {
         return userID;
     }
 
-    public void setUserID(int userID) {
+    public void setUserID(long userID) {
         this.userID = userID;
     }
 

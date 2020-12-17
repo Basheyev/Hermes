@@ -21,6 +21,8 @@ public class SalesOrdersServiceTest {
 
     private static final Logger LOG = Logger.getLogger(SalesOrdersServiceTest.class);
 
+    private static int customerID;
+    private static int productID;
     private static int addedOrderID;
     private static int addedEntryID;
 
@@ -34,6 +36,51 @@ public class SalesOrdersServiceTest {
                 .when().get("/salesOrders")
                 .then()
                 .statusCode(200);
+
+        // Добавить пользователя
+        customerID =
+                given()
+                .header("Content-Type", "application/json")
+                .body("{\n" +
+                        "    \"mobile\": \"+77056004927\",\n" +
+                        "    \"businessID\": \"850415308450\",\n" +
+                        "    \"name\": \"Болат Башеев\",\n" +
+                        "    \"address\": \"Улы дала 5/2, кв. 248\",\n" +
+                        "    \"city\": \"Нур-Султан\",\n" +
+                        "    \"country\": \"Казахстан\",\n" +
+                        "    \"verified\": true\n" +
+                        "}")
+                .when()
+                .post("/customers/addCustomer")
+                .then()
+                    .statusCode(200)
+                    .assertThat()
+                    .body("mobile", equalTo("+77056004927"))
+                    .body("businessID", equalTo("850415308450"))
+                .extract().path("customerID");
+
+        LOG.info("Customer created customerID=" + customerID);
+
+        // Добавить продукт
+        productID =
+                given()
+                    .header("Content-Type", "application/json")
+                    .body("{\n" +
+                            "    \"name\": \"CUP OF COFFEE\",\n" +
+                            "    \"description\": \"MACCOFFEE\",\n" +
+                            "    \"price\": 5,\n" +
+                            "    \"vendorCode\": \"CCMAC\"\n" +
+                            "}")
+                .when()
+                .post("/catalogue/addProduct")
+                .then()
+                    .statusCode(200)
+                    .assertThat()
+                    .body("vendorCode", equalTo("CCMAC"))
+                    .body("description", equalTo("MACCOFFEE"))
+                .extract().path("productID");
+
+        LOG.info("Product created productID=" + productID);
     }
 
     //---------------------------------------------------------------------------------------------------
@@ -43,7 +90,7 @@ public class SalesOrdersServiceTest {
     public void addOrder() {
         addedOrderID =
         given().
-        when().get("/salesOrders/addOrder").
+        when().get("/salesOrders/addOrder?customerID=" + customerID).
         then().statusCode(200).assertThat()
                 .body("orderID", greaterThan(0))        // Проверяем что orderID > 0
                 .body("status", equalTo(1))           // Проверям что status=1 (новый заказ)
@@ -71,9 +118,10 @@ public class SalesOrdersServiceTest {
     public void addOrderEntry() {
         addedEntryID =
         given().
-        when().get("/salesOrders/addOrderEntry?orderID=" + addedOrderID + "&productID=2&amount=12").
+        when().get("/salesOrders/addOrderEntry?orderID=" + addedOrderID +
+                "&productID=" + productID + "&amount=12").
         then().statusCode(200).assertThat()
-                .body("productID", equalTo(2))
+                .body("productID", equalTo(productID))
                 .body("amount", equalTo(12))
                 .extract().path("entryID");
     }
@@ -86,7 +134,7 @@ public class SalesOrdersServiceTest {
         given().
         when().get("/salesOrders/getOrderEntry?entryID=" + addedEntryID).
               then().statusCode(200).assertThat()
-              .body("productID", equalTo(2))
+              .body("productID", equalTo(productID))
               .body("amount", equalTo(12));
     }
 
@@ -128,6 +176,14 @@ public class SalesOrdersServiceTest {
     }
 
     //---------------------------------------------------------------------------------------------------
-
+    @Test
+    @Order(9)
+    public void removeCustomer() {
+        String response =
+                given().
+                        when().get("/customers/removeCustomer?customerID=" + customerID).
+                        then().statusCode(200).extract().asString();
+        LOG.info("CustomerID=" + customerID + " deleted response=" + response);
+    }
 
 }

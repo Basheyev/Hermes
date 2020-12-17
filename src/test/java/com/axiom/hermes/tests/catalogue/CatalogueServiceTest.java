@@ -90,17 +90,19 @@ public class CatalogueServiceTest {
     @Test
     @Order(4)
     public void updateProduct() {
+        String request = "{\n" +
+                "    \"productID\": " + productID + ",\n" +
+                "    \"name\": \"CUP OF COFFEE\",\n" +
+                "    \"description\": \"MACCOFFEE\",\n" +
+                "    \"price\": 15,\n" +
+                "    \"vendorCode\": \"CCMAC\",\n" +
+                "    \"available\": true\n" +
+                "}";
+        LOG.info("updateProduct request:\n" + request);
         productID =
                 given()
                         .header("Content-Type", "application/json")
-                        .body("{\n" +
-                                "    \"productID\": " + productID + ",\n" +
-                                "    \"name\": \"CUP OF COFFEE\",\n" +
-                                "    \"description\": \"MACCOFFEE\",\n" +
-                                "    \"price\": 15,\n" +
-                                "    \"vendorCode\": \"CCMAC\"\n" +
-                               // "    \"available\": \"true\"\n" +
-                                "}")
+                        .body(request)
                 .when()
                         .post("/catalogue/updateProduct")
                 .then()
@@ -110,7 +112,7 @@ public class CatalogueServiceTest {
                         .body("vendorCode", equalTo("CCMAC"))
                         .body("description", equalTo("MACCOFFEE"))
                         .body("price", equalTo(15f))
-                        .body("available", equalTo(false))
+                        .body("available", equalTo(true))
                         .extract().path("productID");
 
         LOG.info("Product updated productID=" + productID);

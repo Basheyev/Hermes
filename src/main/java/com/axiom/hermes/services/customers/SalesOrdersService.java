@@ -35,7 +35,7 @@ public class SalesOrdersService {
 
     @GET
     @Path("/getOrders")
-    public Response getOrders(@QueryParam("customerID") int customerID, @QueryParam("status") int status) {
+    public Response getOrders(@QueryParam("customerID") long customerID, @QueryParam("status") int status) {
         List<SalesOrder> orders = salesOrders.getOrders(customerID, status);
         if (orders==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(orders).build();
@@ -43,7 +43,7 @@ public class SalesOrdersService {
 
     @GET
     @Path("/addOrder")
-    public Response addOrder(@QueryParam("customerID") int customerID) {
+    public Response addOrder(@QueryParam("customerID") long customerID) {
         SalesOrder order = salesOrders.addOrder(customerID);
         if (order==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(order).build();
@@ -95,8 +95,8 @@ public class SalesOrdersService {
     @Path("/addOrderEntry")
     public Response addOrderEntry(
             @QueryParam("orderID") long orderID,
-            @QueryParam("productID") int productID,
-            @QueryParam("amount") int amount) {
+            @QueryParam("productID") long productID,
+            @QueryParam("amount") long amount) {
         SalesOrderEntry entry = salesOrders.addOrderEntry(orderID, productID, amount);
         if (entry==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(entry).build();
@@ -106,8 +106,8 @@ public class SalesOrdersService {
     @Path("/updateOrderEntry")
     public Response updateOrderEntry(
             @QueryParam("entryID") long entryID,
-            @QueryParam("productID") int newProductID,
-            @QueryParam("amount") int newAmount) {
+            @QueryParam("productID") long newProductID,
+            @QueryParam("amount") long newAmount) {
         SalesOrderEntry entry = salesOrders.updateOrderEntry(entryID, newProductID, newAmount);
         if (entry==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(entry).build();

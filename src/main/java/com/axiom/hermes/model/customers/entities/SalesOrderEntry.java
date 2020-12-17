@@ -14,14 +14,14 @@ public class SalesOrderEntry {
     @Id @GeneratedValue
     private long entryID;                    // Счётчик позиции
     private long orderID;                    // Код заказа
-    private int productID;                   // Товарная позиция
-    private int amount;                      // Количество заказанного товара
+    private long productID;                  // Товарная позиция
+    private long amount;                     // Количество заказанного товара
     private double price;                    // Цена товара на момент заказа
-    private int fulfilledAmount;             // Позиция заказа выполнена
+    private long fulfilledAmount;            // Позиция заказа выполнена
 
     public SalesOrderEntry() { }
 
-    public SalesOrderEntry(long orderID, int productID, int amount, double price) {
+    public SalesOrderEntry(long orderID, long productID, long amount, double price) {
         this.orderID = orderID;
         this.productID = productID;
         this.amount = amount;
@@ -44,19 +44,19 @@ public class SalesOrderEntry {
         this.orderID = orderID;
     }
 
-    public int getProductID() {
+    public long getProductID() {
         return productID;
     }
 
-    public void setProductID(int productID) {
+    public void setProductID(long productID) {
         this.productID = productID;
     }
 
-    public int getAmount() {
+    public long getAmount() {
         return amount;
     }
 
-    public void setAmount(int amount) {
+    public void setAmount(long amount) {
         this.amount = amount;
     }
 
@@ -68,11 +68,11 @@ public class SalesOrderEntry {
         this.price = price;
     }
 
-    public int getFulfilledAmount() {
+    public long getFulfilledAmount() {
         return fulfilledAmount;
     }
 
-    public void setFulfilledAmount(int fulfilledAmount) {
+    public void setFulfilledAmount(long fulfilledAmount) {
         this.fulfilledAmount = fulfilledAmount;
     }
 }

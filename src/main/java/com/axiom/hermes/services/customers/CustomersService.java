@@ -39,7 +39,7 @@ public class CustomersService {
 
     @GET
     @Path("/getCustomer")
-    public Response getCustomer(@QueryParam("customerID") int customerID) {
+    public Response getCustomer(@QueryParam("customerID") long customerID) {
         Customer customer = customers.getCustomer(customerID);
         if (customer==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(customer).build();
@@ -63,7 +63,7 @@ public class CustomersService {
 
     @GET
     @Path("/removeCustomer")
-    public Response removeCustomer(@QueryParam("customerID")int customerID) {
+    public Response removeCustomer(@QueryParam("customerID") long customerID) {
         if (!customers.removeCustomer(customerID)) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }

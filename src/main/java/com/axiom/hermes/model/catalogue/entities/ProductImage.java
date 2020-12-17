@@ -11,7 +11,7 @@ import java.io.IOException;
 public class ProductImage {
 
     @Id
-    public int productID;                    // ID владельца (Product/Category)
+    public long productID;                   // ID владельца (Product/Category)
     private String filename;                 // Название файла
     private byte[] thumbnail;                // Миниатюрное изображение
     private byte[] image;                    // Полноразмерное изображение
@@ -19,7 +19,7 @@ public class ProductImage {
 
     public ProductImage() {}
 
-    public ProductImage(int productID, String filename, byte[] imageFile, byte[] thumbnail) {
+    public ProductImage(long productID, String filename, byte[] imageFile, byte[] thumbnail) {
         this.productID = productID;
         this.filename = filename;
         this.image = imageFile;
@@ -27,11 +27,11 @@ public class ProductImage {
         this.timestamp = System.currentTimeMillis();
     }
 
-    public int getProductID() {
+    public long getProductID() {
         return productID;
     }
 
-    public void setProductID(int productID) {
+    public void setProductID(long productID) {
         this.productID = productID;
     }
 

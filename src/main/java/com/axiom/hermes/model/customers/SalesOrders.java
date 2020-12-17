@@ -13,6 +13,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
 import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
 
@@ -60,7 +61,7 @@ public class SalesOrders {
      * @return список заказов клиента с указанным статусом
      */
     @Transactional
-    public List<SalesOrder> getOrders(int customerID, int status) {
+    public List<SalesOrder> getOrders(long customerID, int status) {
         List<SalesOrder> customerOrders;
         String query;
         if (status==0) {
@@ -79,7 +80,7 @@ public class SalesOrders {
      * @return созданный новый заказ или null если такого клиента нет
      */
     @Transactional
-    public SalesOrder addOrder(int customerID) {
+    public SalesOrder addOrder(long customerID) {
         if (customerID < 0) return null;
         Customer customer = customers.getCustomer(customerID);
         if (customer==null) return null;
@@ -172,7 +173,7 @@ public class SalesOrders {
      * @return позиция заказа
      */
     @Transactional
-    public SalesOrderEntry getOrderEntry(long orderID, int productID) {
+    public SalesOrderEntry getOrderEntry(long orderID, long productID) {
         if (orderID<0 || productID<0) return null;
         SalesOrderEntry entry = null;
         String query =
@@ -194,7 +195,7 @@ public class SalesOrders {
      * @return данные позиции заказа
      */
     @Transactional
-    public SalesOrderEntry addOrderEntry(long orderID, int productID, int amount) {
+    public SalesOrderEntry addOrderEntry(long orderID, long productID, long amount) {
         if (orderID < 0 || productID < 0 || amount < 0) return null;
         SalesOrder salesOrder = getOrder(orderID);
         if (salesOrder==null) return null;
@@ -212,7 +213,7 @@ public class SalesOrders {
             entry = new SalesOrderEntry(orderID, productID, amount, product.getPrice());
         } else {
             // Если такая товарная позиция есть есть - суммируем количество текущее и новое
-            int totalAmount = entry.getAmount() + amount;
+            long totalAmount = entry.getAmount() + amount;
             entry.setAmount(totalAmount);
             // Обновляем на текущую цену
             entry.setPrice(product.getPrice());
@@ -234,7 +235,7 @@ public class SalesOrders {
      * @return обновленная позиция заказа
      */
     @Transactional
-    public SalesOrderEntry updateOrderEntry(long entryID, int newProductID, int newAmount) {
+    public SalesOrderEntry updateOrderEntry(long entryID, long newProductID, long newAmount) {
         if (newAmount < 0) return null;
         // Если такая позиция не найдена
         SalesOrderEntry managedEntry = entityManager.find(SalesOrderEntry.class, entryID);
@@ -268,11 +269,11 @@ public class SalesOrders {
      * @return обновленная позиция заказа
      */
     @Transactional
-    public SalesOrderEntry addFulfilledAmount(long orderID, int productID, int fulfilledAmount) {
+    public SalesOrderEntry addFulfilledAmount(long orderID, long productID, long fulfilledAmount) {
         if (fulfilledAmount <= 0) return null;
         SalesOrderEntry salesOrderEntry = getOrderEntry(orderID, productID);
         if (salesOrderEntry == null) return null;
-        int newFulfilledAmount = salesOrderEntry.getFulfilledAmount() + fulfilledAmount;
+        long newFulfilledAmount = salesOrderEntry.getFulfilledAmount() + fulfilledAmount;
         salesOrderEntry.setFulfilledAmount(newFulfilledAmount);
         entityManager.persist(salesOrderEntry);
         return salesOrderEntry;
@@ -286,11 +287,11 @@ public class SalesOrders {
      * @return обновленная позиция заказа
      */
     @Transactional
-    public SalesOrderEntry subtractFulfilledAmount(long orderID, int productID, int fulfilledAmount) {
+    public SalesOrderEntry subtractFulfilledAmount(long orderID, long productID, long fulfilledAmount) {
         if (fulfilledAmount <= 0) return null;
         SalesOrderEntry salesOrderEntry = getOrderEntry(orderID, productID);
         if (salesOrderEntry == null) return null;
-        int newFulfilledAmount = salesOrderEntry.getFulfilledAmount() - fulfilledAmount;
+        long newFulfilledAmount = salesOrderEntry.getFulfilledAmount() - fulfilledAmount;
         if (newFulfilledAmount < 0) return null;
         salesOrderEntry.setFulfilledAmount(newFulfilledAmount);
         entityManager.persist(salesOrderEntry);
@@ -324,7 +325,7 @@ public class SalesOrders {
      * @return количество забронированного товара по указанной позиции
      */
     @Transactional
-    public long getCommittedAmount(int productID) {
+    public long getCommittedAmount(long productID) {
         // Вычисляем Committed Stock (забронированное количество) - это сумма неисполненных
         // позиции с указанным productID подтвержденных, но пока не исполненных заказов
         String sqlQuery = "SELECT SUM(SalesOrderEntry.amount - SalesOrderEntry.fulfilledAmount) " +
@@ -337,8 +338,8 @@ public class SalesOrders {
         long committedStock = 0;
         // Если что-то нашли - значит что-то забронировано
         if (result!=null) {
-            // Не знаю почему возваращаемый тип SUM при разных условиях разный, но обходим
-            if (result instanceof BigInteger) committedStock = ((BigInteger) result).longValue();
+            // Если поле INTEGER, то тип SUM() - LONG, а если поле LONG - BigDecimal
+            if (result instanceof BigDecimal) committedStock = ((BigDecimal) result).longValue();
             if (result instanceof Long) committedStock = (Long) result;
             if (committedStock < 0) committedStock = 0;
         }

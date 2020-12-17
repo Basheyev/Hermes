@@ -21,23 +21,14 @@ import static org.hamcrest.Matchers.greaterThan;
 @QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class OrderE2ETest {
-    // todo добавить тесты на остатки, бронь и доступно для покупки
-    //  1) Сохранить текущие остатки доступные для продажи
-    //  2) Закупить товар
-    //  3) Добавить клиента
-    //  4) Создать заказ на клиента
-    //  5) Добавть позицию заказа
-    //  6) Установить статус - подтвердить заказ
-    //  7) Проверить доступные остатки (должно быть)
-    //  8) Отгрузить заказ
-    //  9) Сверить остатки
 
     private static final Logger LOG = Logger.getLogger(OrderE2ETest.class);
 
-    private static final int productID = 1;
+
     public static final int purchaseAmount = 30;
     public static final int buyAmount = 24;
 
+    private static int productID;
     private static int initialStock;
     private static int orderID;
     private static int customerID;
@@ -48,6 +39,29 @@ public class OrderE2ETest {
     @Test
     @Order(1)
     public void getStockInformation() {
+
+
+        // Добавить продукт
+        productID =
+                given()
+                        .header("Content-Type", "application/json")
+                        .body("{\n" +
+                                "    \"name\": \"CUP OF COFFEE\",\n" +
+                                "    \"description\": \"MACCOFFEE\",\n" +
+                                "    \"price\": 5,\n" +
+                                "    \"vendorCode\": \"CCMAC\"\n" +
+                                "}")
+                        .when()
+                        .post("/catalogue/addProduct")
+                        .then()
+                        .statusCode(200)
+                        .assertThat()
+                        .body("vendorCode", equalTo("CCMAC"))
+                        .body("description", equalTo("MACCOFFEE"))
+                        .extract().path("productID");
+
+        LOG.info("Product created productID=" + productID);
+
         initialStock =
                 given()
                 .when()
@@ -79,7 +93,7 @@ public class OrderE2ETest {
                     .body("amount", equalTo(purchaseAmount))
                     .body("price", equalTo(20f))
                 .extract().asString();
-        LOG.info(response);
+        LOG.info(makePretty(response));
     }
 
 
@@ -182,11 +196,11 @@ public class OrderE2ETest {
                 .statusCode(200)
                 .body("productID", equalTo(productID))
                 .body("stockOnHand", equalTo(initialStock + purchaseAmount))
-                .body("committedStock", equalTo(buyAmount))
+                .body("committedStock", equalTo(buyAmount)) // fixme
                 .body("availableForSale", equalTo(initialStock + purchaseAmount - buyAmount))
             .extract().asString();
 
-        LOG.info("ProductID="+ productID + " stock information:\n" + response);
+        LOG.info("ProductID="+ productID + " stock information:\n" + makePretty(response));
 
     }
 
@@ -209,13 +223,13 @@ public class OrderE2ETest {
         String response =
                 given()
                 .when()
-                    .get("/inventory/sale?productID=" + productID + "&amount=" + availableForSale +
+                    .get("/inventory/sale?productID=" + productID + "&amount=" + (availableForSale+1) +
                             "&price=30")
                 .then()
                     .assertThat()
-                    .statusCode(200)
+                    .statusCode(404)
                 .extract().asString();
-        LOG.info(response);
+        LOG.info("Trying to sell more than available:\"" + makePretty(response));
     }
 
     //--------------------------------------------------------------------------------------------------
@@ -275,7 +289,7 @@ public class OrderE2ETest {
                         .body("productID", equalTo(entryProductID))
                         .body("amount", equalTo(amount))
                     .extract().asString();
-            LOG.info("Inventory transaction:\n" + response);
+            LOG.info("Inventory transaction:\n" + makePretty(response));
 
             // удостовериться в исполнении заказа
             if (entriesList.size() > 0) {
@@ -288,9 +302,8 @@ public class OrderE2ETest {
                     .statusCode(200)
                     .body("productID", equalTo(productID))
                     .body("committedStock", equalTo(0))
-                    .body("availableForSale", equalTo(0))
                 .extract().asString();
-                LOG.info("Stock information:\n" + response);
+                LOG.info("Stock information:\n" + makePretty(response));
             }
         }
 
@@ -342,8 +355,19 @@ public class OrderE2ETest {
                             .body("amount", equalTo(availableForSale))
                             .body("price", equalTo(20f))
                             .extract().asString();
-            LOG.info(response);
+            LOG.info(makePretty(response));
         }
+    }
+
+
+    private String makePretty(String response) {
+        StringBuffer sb = new StringBuffer(response);
+        for (int i=0; i<sb.length(); i++) {
+            if (sb.charAt(i)==',') {
+                sb.insert(i+1, '\n');
+            }
+        }
+        return sb.toString();
     }
 
 }
