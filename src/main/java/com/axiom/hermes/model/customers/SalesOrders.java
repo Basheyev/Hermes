@@ -1,12 +1,13 @@
 package com.axiom.hermes.model.customers;
 
+import com.axiom.hermes.common.exceptions.HermesException;
 import com.axiom.hermes.model.catalogue.Catalogue;
 import com.axiom.hermes.model.catalogue.entities.Product;
 import com.axiom.hermes.model.customers.entities.Customer;
 import com.axiom.hermes.model.customers.entities.SalesOrder;
 import com.axiom.hermes.model.customers.entities.SalesOrderEntry;
 import com.axiom.hermes.model.inventory.Inventory;
-import com.axiom.hermes.model.utils.Utils;
+import com.axiom.hermes.common.utils.Utils;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -14,8 +15,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
 import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.List;
 
 /**
@@ -196,7 +195,7 @@ public class SalesOrders {
      * @return данные позиции заказа
      */
     @Transactional
-    public SalesOrderEntry addOrderEntry(long orderID, long productID, long amount) {
+    public SalesOrderEntry addOrderEntry(long orderID, long productID, long amount) throws HermesException {
         if (orderID < 0 || productID < 0 || amount < 0) return null;
         SalesOrder salesOrder = getOrder(orderID);
         if (salesOrder==null) return null;
@@ -236,7 +235,7 @@ public class SalesOrders {
      * @return обновленная позиция заказа
      */
     @Transactional
-    public SalesOrderEntry updateOrderEntry(long entryID, long newProductID, long newAmount) {
+    public SalesOrderEntry updateOrderEntry(long entryID, long newProductID, long newAmount) throws HermesException {
         if (newAmount < 0) return null;
         // Если такая позиция не найдена
         SalesOrderEntry managedEntry = entityManager.find(SalesOrderEntry.class, entryID);

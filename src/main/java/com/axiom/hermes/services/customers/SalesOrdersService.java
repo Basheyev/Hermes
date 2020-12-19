@@ -1,5 +1,6 @@
 package com.axiom.hermes.services.customers;
 
+import com.axiom.hermes.common.exceptions.HermesException;
 import com.axiom.hermes.model.customers.SalesOrders;
 import com.axiom.hermes.model.customers.entities.SalesOrder;
 import com.axiom.hermes.model.customers.entities.SalesOrderEntry;
@@ -85,7 +86,7 @@ public class SalesOrdersService {
 
     @GET
     @Path("/getOrderEntry")
-    public Response getOrderEntry(@QueryParam("entryID") long entryID) {
+    public Response getOrderEntry(@QueryParam("entryID") long entryID) throws HermesException {
         SalesOrderEntry entry = salesOrders.getOrderEntry(entryID);
         if (entry==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(entry).build();
@@ -96,7 +97,7 @@ public class SalesOrdersService {
     public Response addOrderEntry(
             @QueryParam("orderID") long orderID,
             @QueryParam("productID") long productID,
-            @QueryParam("amount") long amount) {
+            @QueryParam("amount") long amount) throws HermesException {
         SalesOrderEntry entry = salesOrders.addOrderEntry(orderID, productID, amount);
         if (entry==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(entry).build();
@@ -107,7 +108,7 @@ public class SalesOrdersService {
     public Response updateOrderEntry(
             @QueryParam("entryID") long entryID,
             @QueryParam("productID") long newProductID,
-            @QueryParam("amount") long newAmount) {
+            @QueryParam("amount") long newAmount) throws HermesException {
         SalesOrderEntry entry = salesOrders.updateOrderEntry(entryID, newProductID, newAmount);
         if (entry==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(entry).build();

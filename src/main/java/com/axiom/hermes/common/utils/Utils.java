@@ -1,4 +1,4 @@
-package com.axiom.hermes.model.utils;
+package com.axiom.hermes.common.utils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

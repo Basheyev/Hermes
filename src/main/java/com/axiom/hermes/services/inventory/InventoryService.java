@@ -1,5 +1,6 @@
 package com.axiom.hermes.services.inventory;
 
+import com.axiom.hermes.common.exceptions.HermesException;
 import com.axiom.hermes.model.inventory.Inventory;
 import com.axiom.hermes.model.inventory.entities.StockInformation;
 import com.axiom.hermes.model.inventory.entities.StockTransaction;
@@ -48,7 +49,7 @@ public class InventoryService {
     public Response purchase(@QueryParam("orderID") long orderID,
                              @QueryParam("productID") long productID,
                              @QueryParam("amount") long amount,
-                             @QueryParam("price") double price) {
+                             @QueryParam("price") double price) throws HermesException {
         StockTransaction purchase = inventory.purchase(orderID, productID, amount, price);
         if (purchase==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(purchase).build();
@@ -59,7 +60,7 @@ public class InventoryService {
     public Response saleReturn(@QueryParam("orderID") long orderID,
                                @QueryParam("productID") long productID,
                                @QueryParam("amount") long amount,
-                               @QueryParam("price") double price) {
+                               @QueryParam("price") double price) throws HermesException {
         StockTransaction saleReturn = inventory.saleReturn(orderID, productID, amount, price);
         if (saleReturn==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(saleReturn).build();
@@ -69,7 +70,7 @@ public class InventoryService {
     @Path("/sale")
     public Response sale(@QueryParam("orderID") long orderID,
                          @QueryParam("productID") long productID,
-                         @QueryParam("amount") long amount) {
+                         @QueryParam("amount") long amount) throws HermesException {
         StockTransaction sale = inventory.sale(orderID, productID, amount);
         if (sale==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(sale).build();
@@ -80,7 +81,7 @@ public class InventoryService {
     public Response purchaseReturn(@QueryParam("orderID") long orderID,
                                    @QueryParam("productID") long productID,
                                    @QueryParam("amount") long amount,
-                                   @QueryParam("price") double price) {
+                                   @QueryParam("price") double price) throws HermesException {
         StockTransaction purchaseReturn = inventory.purchaseReturn(orderID, productID, amount, price);
         if (purchaseReturn==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(purchaseReturn).build();
@@ -91,7 +92,7 @@ public class InventoryService {
     public Response writeOff(@QueryParam("orderID") long orderID,
                              @QueryParam("productID") long productID,
                              @QueryParam("amount") long amount,
-                             @QueryParam("price") double price) {
+                             @QueryParam("price") double price) throws HermesException {
         StockTransaction writeOff = inventory.writeOff(orderID, productID, amount, price);
         if (writeOff==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(writeOff).build();
@@ -131,7 +132,7 @@ public class InventoryService {
 
     @GET
     @Path("/getStockInformation")
-    public Response getStockInformation(@QueryParam("productID") long productID) {
+    public Response getStockInformation(@QueryParam("productID") long productID) throws HermesException {
         StockInformation stockInfo = inventory.getStockInformation(productID);
         if (stockInfo==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(stockInfo).build();

@@ -1,6 +1,7 @@
 package com.axiom.hermes.model.inventory;
 
 
+import com.axiom.hermes.common.exceptions.HermesException;
 import com.axiom.hermes.model.catalogue.Catalogue;
 import com.axiom.hermes.model.catalogue.entities.Product;
 import com.axiom.hermes.model.customers.SalesOrders;
@@ -31,7 +32,9 @@ public class Inventory {
     // Базовые операции в журнале складского учёта - тут основная бизнес логика и производительность
     //-----------------------------------------------------------------------------------------------------
     @Transactional
-    private StockTransaction debitStock(int opCode, long orderID, long productID, long amount, double price) {
+    private StockTransaction debitStock(int opCode, long orderID, long productID, long amount, double price)
+            throws HermesException {
+
         if (orderID < 0 || productID < 0 || amount <= 0 || price < 0) return null;
 
         // Поднимаем складскую карточку товара
@@ -72,7 +75,8 @@ public class Inventory {
 
 
     @Transactional
-    private StockTransaction creditStock(int opCode, long orderID, long productID, long amount, double price) {
+    private StockTransaction creditStock(int opCode, long orderID, long productID, long amount, double price)
+        throws HermesException{
         if (orderID < 0 || productID < 0 || amount <= 0 || price < 0) return null;
 
         // Поднимаем складскую карточку товара
@@ -145,7 +149,8 @@ public class Inventory {
      * @return true - если проведена, false - если нет
      */
     @Transactional
-    public StockTransaction purchase(long orderID, long productID, long amount, double price) {
+    public StockTransaction purchase(long orderID, long productID, long amount, double price)
+            throws HermesException {
         return debitStock(DEBIT_PURCHASE, orderID, productID, amount, price);
     }
 
@@ -157,7 +162,7 @@ public class Inventory {
      * @return true - если проведена, false - если нет товара
      */
     @Transactional
-    public StockTransaction sale(long orderID, long productID, long amount) {
+    public StockTransaction sale(long orderID, long productID, long amount) throws HermesException  {
         return creditStock(CREDIT_SALE, orderID, productID, amount, 0);
     }
 
@@ -169,7 +174,7 @@ public class Inventory {
      * @return true - если проведена, false - если нет
      */
     @Transactional
-    public StockTransaction saleReturn(long orderID, long productID, long amount, double price) {
+    public StockTransaction saleReturn(long orderID, long productID, long amount, double price) throws HermesException {
         return debitStock(DEBIT_SALE_RETURN, orderID, productID, amount, price);
     }
 
@@ -181,7 +186,7 @@ public class Inventory {
      * @return true - если проведена, false - если нет
      */
     @Transactional
-    public StockTransaction purchaseReturn(long orderID, long productID, long amount, double price) {
+    public StockTransaction purchaseReturn(long orderID, long productID, long amount, double price) throws HermesException {
         return creditStock(CREDIT_PURCHASE_RETURN, orderID, productID, amount, price);
     }
 
@@ -193,7 +198,7 @@ public class Inventory {
      * @return true - если проведена, false - если нет
      */
     @Transactional
-    public StockTransaction writeOff(long orderID, long productID, long amount, double price) {
+    public StockTransaction writeOff(long orderID, long productID, long amount, double price) throws HermesException {
         return creditStock(CREDIT_WRITE_OFF, orderID, productID, amount, price);
     }
 
@@ -266,7 +271,7 @@ public class Inventory {
      * @return складская карточка
      */
     @Transactional
-    public StockInformation getStockInformation(long productID) {
+    public StockInformation getStockInformation(long productID) throws HermesException {
         StockInformation stockInfo = entityManager.find(StockInformation.class, productID);
         // Если складской карточки нет, то создаём её если такая товарная позиция есть
         if (stockInfo==null) {
