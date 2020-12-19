@@ -1,9 +1,12 @@
-package com.axiom.hermes.common.utils;
+package com.axiom.hermes.common.validation;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public class Utils {
+public class Validator {
+
+    // todo Вот тут надо бы больше проверок (длина mobile)
+    // todo Добавить защиту от SQL инъекций
 
     /**
      * Конвертирует объект неизвестного типа в Long

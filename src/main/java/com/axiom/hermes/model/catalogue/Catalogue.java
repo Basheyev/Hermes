@@ -5,7 +5,7 @@ import com.axiom.hermes.common.exceptions.HermesException;
 import com.axiom.hermes.model.catalogue.entities.Product;
 import com.axiom.hermes.model.catalogue.entities.ProductImage;
 import com.axiom.hermes.model.inventory.Inventory;
-import com.axiom.hermes.common.utils.Utils;
+import com.axiom.hermes.common.validation.Validator;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -65,7 +65,7 @@ public class Catalogue {
         Product product = entityManager.find(Product.class, productID);
         if (product==null) {
             throw new HermesException(
-                    HTTP_NOT_FOUND, "Product not found",
+                    NOT_FOUND, "Product not found",
                     "Requested productID=" + productID + " not found.");
         }
         return product;
@@ -80,12 +80,12 @@ public class Catalogue {
     public Product addProduct(Product product) throws HermesException {
         if (product.productID != 0) {
             throw new HermesException(
-                    HTTP_BAD_REQUEST, "Invalid parameter",
+                    BAD_REQUEST, "Invalid parameter",
                     "ProductID is not zero. Do not specify productID when creating new Product.");
         }
         product.setTimestamp(System.currentTimeMillis());
         entityManager.persist(product);
-        inventory.createStockInformation(product.productID);
+        inventory.createStockCard(product.productID);
         return product;
     }
 
@@ -99,9 +99,9 @@ public class Catalogue {
         Product managedEntity = getProduct(product.productID);
         if (managedEntity==null) return null;
         if (product.getPrice() < 0)
-            throw new HermesException(HTTP_BAD_REQUEST, "Invalid parameter", "price < 0.0");
+            throw new HermesException(BAD_REQUEST, "Invalid parameter", "price < 0.0");
         if (product.getCategoryID() < 0)
-            throw new HermesException(HTTP_BAD_REQUEST, "Invalid parameter", "categoryID < 0");
+            throw new HermesException(BAD_REQUEST, "Invalid parameter", "categoryID < 0");
 
         // Применять только те значения, которые были указаны (чтобы не затереть имеющиеся)
         if (product.getVendorCode()!=null) managedEntity.setVendorCode(product.getVendorCode());
@@ -130,20 +130,20 @@ public class Catalogue {
 
         // Если хоть где-то используется в заказах или транзакциях нельзя удалять
         String sqlQuery = "SELECT " +
-                "(SELECT COUNT(*) FROM SalesOrderEntry WHERE SalesOrderEntry.productID=" + productID + ") +" +
+                "(SELECT COUNT(*) FROM SalesOrderItem WHERE SalesOrderItem.productID=" + productID + ") +" +
                 "(SELECT COUNT(*) FROM StockTransaction WHERE StockTransaction.productID=" + productID + ")";
 
-        long usageCount = Utils.asLong(entityManager.createNativeQuery(sqlQuery).getSingleResult());
+        long usageCount = Validator.asLong(entityManager.createNativeQuery(sqlQuery).getSingleResult());
 
         // Если продукт используется в заказах или транзакциях - удалять нельзя
         if (usageCount > 0) {
-            throw new HermesException(HTTP_FORBIDDEN, "Product cannot be deleted",
+            throw new HermesException(FORBIDDEN, "Product cannot be deleted",
                     "ProductID=" + productID + " cannot be deleted because used in Orders or Transactions");
         }
 
         // Если нигде не используется тогда удаляем связанные данные: изображения и складские карточки
         entityManager.createQuery("DELETE FROM ProductImage a WHERE a.productID=" + productID).executeUpdate();
-        entityManager.createQuery("DELETE FROM StockInformation a WHERE a.productID=" + productID).executeUpdate();
+        entityManager.createQuery("DELETE FROM StockCard a WHERE a.productID=" + productID).executeUpdate();
         entityManager.remove(product);
     }
 
@@ -182,7 +182,7 @@ public class Catalogue {
             return entityManager.createQuery(query, byte[].class).getSingleResult();
         } catch (NoResultException e) {
             throw new HermesException(
-                    HTTP_NOT_FOUND, "Product Thumbnail image not found",
+                    NOT_FOUND, "Product Thumbnail image not found",
                     "Requested productID=" + productID + " Thumbnail image not found.");
         }
     }
@@ -194,7 +194,7 @@ public class Catalogue {
             return entityManager.createQuery(query, ProductImage.class).getSingleResult();
         } catch (NoResultException e) {
             throw new HermesException(
-                    HTTP_NOT_FOUND, "Product image not found",
+                    NOT_FOUND, "Product image not found",
                     "Requested productID=" + productID + " image not found.");
         }
     }

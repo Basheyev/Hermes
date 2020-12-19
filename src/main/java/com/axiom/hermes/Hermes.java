@@ -4,6 +4,7 @@ import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.annotations.QuarkusMain;
 
 // todo Добавить информационные сообщения об ошибках
+
 // Examples: https://github.com/shopizer-ecommerce
 /**
  * Профиль нагрузки примерно следующий:

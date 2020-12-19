@@ -2,7 +2,7 @@ package com.axiom.hermes.services.inventory;
 
 import com.axiom.hermes.common.exceptions.HermesException;
 import com.axiom.hermes.model.inventory.Inventory;
-import com.axiom.hermes.model.inventory.entities.StockInformation;
+import com.axiom.hermes.model.inventory.entities.StockCard;
 import com.axiom.hermes.model.inventory.entities.StockTransaction;
 
 import javax.inject.Inject;
@@ -26,7 +26,7 @@ public class InventoryService {
 
     @GET
     public Response getAllStocks() {
-        List<StockInformation> allStock = inventory.getAllStocks();
+        List<StockCard> allStock = inventory.getAllStocks();
         if (allStock==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(allStock).build();
     }
@@ -38,7 +38,7 @@ public class InventoryService {
     @GET
     @Path("/getReplenishmentStocks")
     public Response getReplenishmentStocks() {
-        List<StockInformation> stocks = inventory.getReplenishmentStocks();
+        List<StockCard> stocks = inventory.getReplenishmentStocks();
         if (stocks==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(stocks).build();
     }
@@ -48,9 +48,9 @@ public class InventoryService {
     @Path("/purchase")
     public Response purchase(@QueryParam("orderID") long orderID,
                              @QueryParam("productID") long productID,
-                             @QueryParam("amount") long amount,
+                             @QueryParam("quantity") long quantity,
                              @QueryParam("price") double price) throws HermesException {
-        StockTransaction purchase = inventory.purchase(orderID, productID, amount, price);
+        StockTransaction purchase = inventory.purchase(orderID, productID, quantity, price);
         if (purchase==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(purchase).build();
     }
@@ -59,9 +59,9 @@ public class InventoryService {
     @Path("/saleReturn")
     public Response saleReturn(@QueryParam("orderID") long orderID,
                                @QueryParam("productID") long productID,
-                               @QueryParam("amount") long amount,
+                               @QueryParam("quantity") long quantity,
                                @QueryParam("price") double price) throws HermesException {
-        StockTransaction saleReturn = inventory.saleReturn(orderID, productID, amount, price);
+        StockTransaction saleReturn = inventory.saleReturn(orderID, productID, quantity, price);
         if (saleReturn==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(saleReturn).build();
     }
@@ -70,8 +70,8 @@ public class InventoryService {
     @Path("/sale")
     public Response sale(@QueryParam("orderID") long orderID,
                          @QueryParam("productID") long productID,
-                         @QueryParam("amount") long amount) throws HermesException {
-        StockTransaction sale = inventory.sale(orderID, productID, amount);
+                         @QueryParam("quantity") long quantity) throws HermesException {
+        StockTransaction sale = inventory.sale(orderID, productID, quantity);
         if (sale==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(sale).build();
     }
@@ -80,9 +80,9 @@ public class InventoryService {
     @Path("/purchaseReturn")
     public Response purchaseReturn(@QueryParam("orderID") long orderID,
                                    @QueryParam("productID") long productID,
-                                   @QueryParam("amount") long amount,
+                                   @QueryParam("quantity") long quantity,
                                    @QueryParam("price") double price) throws HermesException {
-        StockTransaction purchaseReturn = inventory.purchaseReturn(orderID, productID, amount, price);
+        StockTransaction purchaseReturn = inventory.purchaseReturn(orderID, productID, quantity, price);
         if (purchaseReturn==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(purchaseReturn).build();
     }
@@ -91,9 +91,9 @@ public class InventoryService {
     @Path("/writeOff")
     public Response writeOff(@QueryParam("orderID") long orderID,
                              @QueryParam("productID") long productID,
-                             @QueryParam("amount") long amount,
+                             @QueryParam("quantity") long quantity,
                              @QueryParam("price") double price) throws HermesException {
-        StockTransaction writeOff = inventory.writeOff(orderID, productID, amount, price);
+        StockTransaction writeOff = inventory.writeOff(orderID, productID, quantity, price);
         if (writeOff==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(writeOff).build();
     }
@@ -131,10 +131,9 @@ public class InventoryService {
     }
 
     @GET
-    @Path("/getStockInformation")
-    public Response getStockInformation(@QueryParam("productID") long productID) throws HermesException {
-        StockInformation stockInfo = inventory.getStockInformation(productID);
-        if (stockInfo==null) return Response.status(Response.Status.NOT_FOUND).build();
+    @Path("/getStockCard")
+    public Response getStockCard(@QueryParam("productID") long productID) throws HermesException {
+        StockCard stockInfo = inventory.getStockCard(productID);
         return Response.ok(stockInfo).build();
     }
 

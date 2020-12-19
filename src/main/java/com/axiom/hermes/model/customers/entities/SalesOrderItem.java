@@ -8,23 +8,23 @@ import javax.persistence.*;
 @Entity
 @Table(indexes = {
     @Index(columnList = "orderID"),
-    @Index(name = "SalesOrderEntryIndex", columnList = "orderID, productID")
+    @Index(name = "SalesOrderItemIndex", columnList = "orderID, productID")
 })
-public class SalesOrderEntry {
+public class SalesOrderItem {
     @Id @GeneratedValue
     private long entryID;                    // Счётчик позиции
     private long orderID;                    // Код заказа
     private long productID;                  // Товарная позиция
-    private long amount;                     // Количество заказанного товара
+    private long quantity;                     // Количество заказанного товара
     private double price;                    // Цена товара на момент заказа
-    private long fulfilledAmount;            // Позиция заказа выполнена
+    private long fulfilledQuantity;            // Позиция заказа выполнена
 
-    public SalesOrderEntry() { }
+    public SalesOrderItem() { }
 
-    public SalesOrderEntry(long orderID, long productID, long amount, double price) {
+    public SalesOrderItem(long orderID, long productID, long quantity, double price) {
         this.orderID = orderID;
         this.productID = productID;
-        this.amount = amount;
+        this.quantity = quantity;
         this.price = price;
     }
 
@@ -52,12 +52,12 @@ public class SalesOrderEntry {
         this.productID = productID;
     }
 
-    public long getAmount() {
-        return amount;
+    public long getquantity() {
+        return quantity;
     }
 
-    public void setAmount(long amount) {
-        this.amount = amount;
+    public void setquantity(long quantity) {
+        this.quantity = quantity;
     }
 
     public double getPrice() {
@@ -68,11 +68,11 @@ public class SalesOrderEntry {
         this.price = price;
     }
 
-    public long getFulfilledAmount() {
-        return fulfilledAmount;
+    public long getFulfilledQuantity() {
+        return fulfilledQuantity;
     }
 
-    public void setFulfilledAmount(long fulfilledAmount) {
-        this.fulfilledAmount = fulfilledAmount;
+    public void setFulfilledQuantity(long fulfilledQuantity) {
+        this.fulfilledQuantity = fulfilledQuantity;
     }
 }

@@ -39,7 +39,7 @@ public class StockTransaction {
     public long productID;           // код товара
     public int side;                 // дебет/кредит (приход/расход)
     public int operationCode;        // код операции
-    public long amount;              // количество товара
+    public long quantity;              // количество товара
     public double price;             // цена товара
     public long orderID;             // код заказа как основание (покупки/продажи - зависит от поля side)
     public long userID;              // код пользователя внесшего запись
@@ -48,13 +48,13 @@ public class StockTransaction {
 
     public StockTransaction() {}
 
-    public StockTransaction(long orderID, long productID, int side, int opCode, long amount, double price) {
+    public StockTransaction(long orderID, long productID, int side, int opCode, long quantity, double price) {
         this.orderID = orderID;
         this.timestamp = System.currentTimeMillis();
         this.productID = productID;
         this.side = side;
         this.operationCode = opCode;
-        this.amount = amount;
+        this.quantity = quantity;
         this.price = price;
         this.deleted = false;
     }
@@ -99,12 +99,12 @@ public class StockTransaction {
         this.operationCode = operationCode;
     }
 
-    public long getAmount() {
-        return amount;
+    public long getQuantity() {
+        return quantity;
     }
 
-    public void setAmount(int amount) {
-        this.amount = amount;
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
     }
 
     public double getPrice() {

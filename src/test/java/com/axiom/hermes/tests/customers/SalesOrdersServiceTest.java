@@ -69,7 +69,8 @@ public class SalesOrdersServiceTest {
                             "    \"name\": \"CUP OF COFFEE\",\n" +
                             "    \"description\": \"MACCOFFEE\",\n" +
                             "    \"price\": 5,\n" +
-                            "    \"vendorCode\": \"CCMAC\"\n" +
+                            "    \"vendorCode\": \"CCMAC\",\n" +
+                            "    \"available\": true\n" +
                             "}")
                 .when()
                 .post("/catalogue/addProduct")
@@ -119,10 +120,10 @@ public class SalesOrdersServiceTest {
         addedEntryID =
         given().
         when().get("/salesOrders/addOrderEntry?orderID=" + addedOrderID +
-                "&productID=" + productID + "&amount=12").
+                "&productID=" + productID + "&quantity=12").
         then().statusCode(200).assertThat()
                 .body("productID", equalTo(productID))
-                .body("amount", equalTo(12))
+                .body("quantity", equalTo(12))
                 .extract().path("entryID");
     }
 
@@ -135,7 +136,7 @@ public class SalesOrdersServiceTest {
         when().get("/salesOrders/getOrderEntry?entryID=" + addedEntryID).
               then().statusCode(200).assertThat()
               .body("productID", equalTo(productID))
-              .body("amount", equalTo(12));
+              .body("quantity", equalTo(12));
     }
 
     //---------------------------------------------------------------------------------------------------

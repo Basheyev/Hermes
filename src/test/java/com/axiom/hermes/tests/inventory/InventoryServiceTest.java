@@ -84,7 +84,7 @@ public class InventoryServiceTest {
 
         initialStock = given()
                 .when()
-                .get("/inventory/getStockInformation?productID=" + productID)
+                .get("/inventory/getStockCard?productID=" + productID)
         .then()
                 .assertThat()
                 .statusCode(200)
@@ -100,12 +100,12 @@ public class InventoryServiceTest {
         String response =
             given()
             .when()
-                .get("/inventory/purchase?productID=" + productID + "&amount=10&price=20")
+                .get("/inventory/purchase?productID=" + productID + "&quantity=10&price=20")
             .then()
                 .assertThat()
                 .statusCode(200)
                 .body("productID", equalTo(productID))
-                .body("amount", equalTo(10))
+                .body("quantity", equalTo(10))
                 .body("price", equalTo(20f))
             .extract().asString();
         LOG.info(response);
@@ -117,12 +117,12 @@ public class InventoryServiceTest {
         String response =
             given()
             .when()
-                .get("/inventory/saleReturn?productID=" + productID + "&amount=5&price=20")
+                .get("/inventory/saleReturn?productID=" + productID + "&quantity=5&price=20")
             .then()
                 .assertThat()
                 .statusCode(200)
                 .body("productID", equalTo(productID))
-                .body("amount", equalTo(5))
+                .body("quantity", equalTo(5))
                 .body("price", equalTo(20f))
             .extract().asString();
         LOG.info(response);
@@ -134,12 +134,12 @@ public class InventoryServiceTest {
         String response =
                 given()
                 .when()
-                    .get("/inventory/sale?productID=" + productID + "&amount=10&price=30")
+                    .get("/inventory/sale?productID=" + productID + "&quantity=10&price=30")
                 .then()
                     .assertThat()
                     .statusCode(200)
                     .body("productID", equalTo(productID))
-                    .body("amount", equalTo(10))
+                    .body("quantity", equalTo(10))
                 .extract().asString();
         LOG.info(response);
     }
@@ -150,12 +150,12 @@ public class InventoryServiceTest {
         String response =
                 given()
                 .when()
-                    .get("/inventory/purchaseReturn?productID=" + productID + "&amount=1&price=20")
+                    .get("/inventory/purchaseReturn?productID=" + productID + "&quantity=1&price=20")
                 .then()
                     .assertThat()
                     .statusCode(200)
                     .body("productID", equalTo(productID))
-                    .body("amount", equalTo(1))
+                    .body("quantity", equalTo(1))
                     .body("price", equalTo(20f))
 
                 .extract().asString();
@@ -168,12 +168,12 @@ public class InventoryServiceTest {
         String response =
                 given()
                 .when()
-                    .get("/inventory/writeOff?productID=" + productID + "&amount=4&price=20")
+                    .get("/inventory/writeOff?productID=" + productID + "&quantity=4&price=20")
                 .then()
                     .assertThat()
                     .statusCode(200)
                     .body("productID", equalTo(productID))
-                    .body("amount", equalTo(4))
+                    .body("quantity", equalTo(4))
                     .body("price", equalTo(20f))
                 .extract().asString();
         LOG.info(response);
@@ -185,7 +185,7 @@ public class InventoryServiceTest {
         String response =
                 given()
                         .when()
-                        .get("/inventory/sale?productID=" + productID + "&amount=1000&price=30")
+                        .get("/inventory/sale?productID=" + productID + "&quantity=1000&price=30")
                 .then()
                         .assertThat()
                         .statusCode(404)
@@ -196,11 +196,11 @@ public class InventoryServiceTest {
 
     @Test
     @Order(8)
-    public void getStockInformation() {
+    public void getStockCard() {
         int finalStock =
                 given()
                 .when()
-                    .get("/inventory/getStockInformation?productID=" + productID)
+                    .get("/inventory/getStockCard?productID=" + productID)
                 .then()
                 .assertThat()
                     .statusCode(200)

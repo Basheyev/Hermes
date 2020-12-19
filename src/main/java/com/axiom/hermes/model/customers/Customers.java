@@ -1,16 +1,17 @@
 package com.axiom.hermes.model.customers;
 
+import com.axiom.hermes.common.exceptions.HermesException;
 import com.axiom.hermes.model.customers.entities.Customer;
-import com.axiom.hermes.model.customers.entities.SalesOrder;
-import com.axiom.hermes.model.customers.entities.SalesOrderEntry;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
+import javax.persistence.PersistenceException;
 import javax.transaction.Transactional;
-import java.math.BigInteger;
 import java.util.List;
+
+import static com.axiom.hermes.common.exceptions.HermesException.*;
 
 /**
  * Управление клиентами
@@ -39,9 +40,14 @@ public class Customers {
      * @return карточка клиента
      */
     @Transactional
-    public Customer getCustomer(long customerID) {
-        if (customerID < 0) return null;
-        return entityManager.find(Customer.class, customerID);
+    public Customer getCustomer(long customerID) throws HermesException{
+        Customer customer = entityManager.find(Customer.class, customerID);
+        if (customer==null) {
+            throw new HermesException(
+                    NOT_FOUND, "Customer not found",
+                    "Customer where customerID=" + customerID + " not found.");
+        }
+        return customer;
     }
 
     /**
@@ -50,30 +56,42 @@ public class Customers {
      * @return карточка клиента
      */
     @Transactional
-    public Customer getCustomerByMobile(String mobile) {
-        if (mobile==null) return null;
-        Customer customer;
+    public Customer getCustomerByMobile(String mobile) throws HermesException {
+        if (mobile==null) throw new HermesException(BAD_REQUEST, "Invalid parameter", "Mobile can not be null.");
         try {
             String query = "SELECT a FROM Customer a WHERE a.mobile='" + mobile + "'";
-            customer = entityManager.createQuery(query, Customer.class).getSingleResult();
-        } catch(NoResultException e){
-            customer = null;
+            return entityManager.createQuery(query, Customer.class).getSingleResult();
+        } catch (NoResultException e){
+            throw new HermesException(NOT_FOUND, "Customer not found",
+                    "Customer where mobile='" + mobile + "' not found.");
+        } catch (PersistenceException e) {
+            throw new HermesException(INTERNAL_SERVER_ERROR, "Internal Server Error", e.getMessage());
         }
-        return customer;
     }
 
     /**
-     * Добавить нового клиента
+     * Добавить нового клиента с уникальным мобильным телефоном
      * @param customer карточка клиента
      * @return добавленная карточа клиента
      */
     @Transactional
-    public Customer addCustomer(Customer customer) {
-        if (customer==null) return null;
-        if (customer.getMobile()==null) return null;
-        if (getCustomerByMobile(customer.getMobile())!=null) return null;
-        entityManager.persist(customer);
-        return customer;
+    public Customer addCustomer(Customer customer) throws HermesException {
+        String mobile = customer.getMobile();
+        if (mobile==null || mobile.equals(""))
+            throw new HermesException(BAD_REQUEST, "Invalid parameter", "Mobile can not be null.");
+        try {
+            // Ищем клиента с таким же мобильным номером
+            getCustomerByMobile(customer.getMobile());
+            // Если нашли - добавлять клиента нельзя
+            throw new HermesException(FORBIDDEN, "Cannot add customer",
+                    "Customer with the same mobile already exist");
+        } catch (HermesException exception) {
+            // Если не нашли - добавляем
+            if (exception.getStatus()== NOT_FOUND) {
+                entityManager.persist(customer);
+                return customer;
+            } else throw exception;
+        }
     }
 
     /**
@@ -82,10 +100,8 @@ public class Customers {
      * @return измененная карточка клиента или null если карточка клиента не найдена
      */
     @Transactional
-    public Customer updateCustomer(Customer customer) {
-        if (customer==null) return null;
-        Customer managed = entityManager.find(Customer.class, customer.getCustomerID());
-        if (managed==null) return null;
+    public Customer updateCustomer(Customer customer) throws HermesException {
+        Customer managed = getCustomer(customer.getCustomerID());
         if (customer.getMobile()!=null) managed.setMobile(customer.getMobile());
         if (customer.getBusinessID()!=null) managed.setBusinessID(customer.getBusinessID());
         if (customer.getName()!=null) managed.setName(customer.getName());
@@ -103,16 +119,17 @@ public class Customers {
      * @return true если удален, false если не найден или есть заказы с его участием
      */
     @Transactional
-    public boolean removeCustomer(long customerID) {
+    public void removeCustomer(long customerID) throws HermesException {
         // Ищем такого клиента
-        Customer customer = entityManager.find(Customer.class, customerID);
-        if (customer==null) return false;
+        Customer customer = getCustomer(customerID);
         // Если у клиента есть хотя бы один заказ - удалять нельзя
         String query = "SELECT COUNT(a.customerID) FROM SalesOrder a WHERE a.customerID=" + customerID;
         long ordersCount = (Long) entityManager.createQuery(query).getSingleResult();
-        if (ordersCount > 0) return false;
+        if (ordersCount > 0) {
+            throw new HermesException(FORBIDDEN, "Customer cannot be deleted",
+                    "CustomerID=" + customerID + " cannot be deleted because mentioned in Orders");
+        }
         entityManager.remove(customer);
-        return true;
     }
 
 }

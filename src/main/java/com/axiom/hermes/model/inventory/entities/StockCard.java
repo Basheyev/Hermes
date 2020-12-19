@@ -7,7 +7,7 @@ import javax.persistence.Id;
  * Складская карточка по товарной позиции
  */
 @Entity
-public class StockInformation {
+public class StockCard {
     @Id
     private long productID;                 // Код товара
     private long stockOnHand;              // Всего товара в наличии
@@ -16,9 +16,9 @@ public class StockInformation {
     private long reorderPoint;             // Минимальные остатки
     private long timestamp;                // Временная метка
 
-    public StockInformation() {}
+    public StockCard() {}
 
-    public StockInformation(long productID) {
+    public StockCard(long productID) {
         this.productID = productID;
         this.stockOnHand = 0;
         this.committedStock = 0;

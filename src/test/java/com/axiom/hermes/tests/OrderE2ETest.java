@@ -25,8 +25,8 @@ public class OrderE2ETest {
     private static final Logger LOG = Logger.getLogger(OrderE2ETest.class);
 
 
-    public static final int purchaseAmount = 30;
-    public static final int buyAmount = 24;
+    public static final int purchasequantity = 30;
+    public static final int buyquantity = 24;
 
     private static int productID;
     private static int initialStock;
@@ -37,7 +37,7 @@ public class OrderE2ETest {
 
     @Test
     @Order(1)
-    public void getStockInformation() {
+    public void getStockCard() {
 
 
         // Добавить продукт
@@ -48,7 +48,8 @@ public class OrderE2ETest {
                                 "    \"name\": \"CUP OF COFFEE\",\n" +
                                 "    \"description\": \"MACCOFFEE\",\n" +
                                 "    \"price\": 5,\n" +
-                                "    \"vendorCode\": \"CCMAC\"\n" +
+                                "    \"vendorCode\": \"CCMAC\",\n" +
+                                "    \"available\": true" +
                                 "}")
                         .when()
                         .post("/catalogue/addProduct")
@@ -64,7 +65,7 @@ public class OrderE2ETest {
         initialStock =
                 given()
                 .when()
-                    .get("/inventory/getStockInformation?productID=" + productID)
+                    .get("/inventory/getStockCard?productID=" + productID)
                 .then()
                     .assertThat()
                     .statusCode(200)
@@ -84,12 +85,12 @@ public class OrderE2ETest {
                 given()
                 .when()
                     .get("/inventory/purchase?productID=" + productID +
-                            "&amount=" + purchaseAmount + "&price=20")
+                            "&quantity=" + purchasequantity + "&price=20")
                 .then()
                     .assertThat()
                     .statusCode(200)
                     .body("productID", equalTo(productID))
-                    .body("amount", equalTo(purchaseAmount))
+                    .body("quantity", equalTo(purchasequantity))
                     .body("price", equalTo(20f))
                 .extract().asString();
         LOG.info(makePretty(response));
@@ -152,23 +153,23 @@ public class OrderE2ETest {
     public void addOrderEntries() {
         int addedEntryID = given().
                 when().get("/salesOrders/addOrderEntry?orderID=" + orderID +
-                "&productID=" + productID + "&amount=13").
+                "&productID=" + productID + "&quantity=13").
                 then().statusCode(200).assertThat()
                 .body("productID", equalTo(productID))
-                .body("amount", equalTo(13))
+                .body("quantity", equalTo(13))
                 .extract().path("entryID");
 
         LOG.info("OrderID=" + orderID + " entry added: " + addedEntryID);
 
-        int amount = given().
+        int quantity = given().
                 when().get("/salesOrders/updateOrderEntry?entryID=" + addedEntryID +
-                "&productID=" + productID + "&amount=" + buyAmount).
+                "&productID=" + productID + "&quantity=" + buyquantity).
                 then().statusCode(200).assertThat()
                     .body("productID", equalTo(productID))
-                    .body("amount", equalTo(buyAmount))
-                .extract().path("amount");
+                    .body("quantity", equalTo(buyquantity))
+                .extract().path("quantity");
 
-        LOG.info("OrderID=" + orderID + " entry updated: " + addedEntryID + " amount=" + amount);
+        LOG.info("OrderID=" + orderID + " entry updated: " + addedEntryID + " quantity=" + quantity);
     }
 
     //---------------------------------------------------------------------------------------------------
@@ -188,14 +189,14 @@ public class OrderE2ETest {
 
         String response = given()
             .when()
-                .get("/inventory/getStockInformation?productID=" + productID)
+                .get("/inventory/getStockCard?productID=" + productID)
             .then()
                 .assertThat()
                 .statusCode(200)
                 .body("productID", equalTo(productID))
-                .body("stockOnHand", equalTo(initialStock + purchaseAmount))
-                .body("committedStock", equalTo(buyAmount))
-                .body("availableForSale", equalTo(initialStock + purchaseAmount - buyAmount))
+                .body("stockOnHand", equalTo(initialStock + purchasequantity))
+                .body("committedStock", equalTo(buyquantity))
+                .body("availableForSale", equalTo(initialStock + purchasequantity - buyquantity))
             .extract().asString();
 
         LOG.info("ProductID="+ productID + " stock information:\n" + makePretty(response));
@@ -208,20 +209,20 @@ public class OrderE2ETest {
     public void checkAvailableForSale() {
         int availableForSale = given()
             .when()
-                .get("/inventory/getStockInformation?productID=" + productID)
+                .get("/inventory/getStockCard?productID=" + productID)
             .then()
             .assertThat()
                 .statusCode(200)
                 .body("productID", equalTo(productID))
-                .body("stockOnHand", equalTo(initialStock + purchaseAmount))
-                .body("committedStock", equalTo(buyAmount))
-                .body("availableForSale", equalTo(initialStock + purchaseAmount - buyAmount))
+                .body("stockOnHand", equalTo(initialStock + purchasequantity))
+                .body("committedStock", equalTo(buyquantity))
+                .body("availableForSale", equalTo(initialStock + purchasequantity - buyquantity))
             .extract().jsonPath().getInt("availableForSale");
 
         String response =
                 given()
                 .when()
-                    .get("/inventory/sale?productID=" + productID + "&amount=" + (availableForSale+1) +
+                    .get("/inventory/sale?productID=" + productID + "&quantity=" + (availableForSale+1) +
                             "&price=30")
                 .then()
                     .assertThat()
@@ -259,7 +260,7 @@ public class OrderE2ETest {
             .extract().jsonPath().getList("$");
         LOG.info("OrderID=" + myOrderID + " has " + entriesList.size() + " items");
 
-        int entryID, entryProductID, amount;
+        int entryID, entryProductID, quantity;
         float price;
 
         // осуществить отгрузки позиций
@@ -267,12 +268,12 @@ public class OrderE2ETest {
 
             entryID = (Integer) entry.get("entryID");
             entryProductID = (Integer) entry.get("productID");
-            amount = (Integer) entry.get("amount");
+            quantity = (Integer) entry.get("quantity");
             price = (Float) entry.get("price");
 
             LOG.info("EntryID=" + entryID +
                      " productID=" + entryProductID +
-                     " amount=" + amount +
+                     " quantity=" + quantity +
                      " price=" + price);
 
             String response =
@@ -280,12 +281,12 @@ public class OrderE2ETest {
                     .when()
                         .get("/inventory/sale?orderID=" + orderID +
                                         "&productID=" + entryProductID +
-                                        "&amount=" + amount)
+                                        "&quantity=" + quantity)
                     .then()
                         .assertThat()
                         .statusCode(200)
                         .body("productID", equalTo(entryProductID))
-                        .body("amount", equalTo(amount))
+                        .body("quantity", equalTo(quantity))
                     .extract().asString();
             LOG.info("Inventory transaction:\n" + makePretty(response));
 
@@ -294,7 +295,7 @@ public class OrderE2ETest {
                 response =
                 given()
                 .when()
-                    .get("/inventory/getStockInformation?productID=" + entryProductID)
+                    .get("/inventory/getStockCard?productID=" + entryProductID)
                 .then()
                     .assertThat()
                     .statusCode(200)
@@ -333,7 +334,7 @@ public class OrderE2ETest {
 
         int availableForSale = given()
                 .when()
-                .get("/inventory/getStockInformation?productID=" + productID)
+                .get("/inventory/getStockCard?productID=" + productID)
                 .then()
                 .assertThat()
                 .statusCode(200)
@@ -345,12 +346,12 @@ public class OrderE2ETest {
                     given()
                             .when()
                             .get("/inventory/writeOff?productID=" + productID +
-                                    "&amount=" + availableForSale + "&price=20")
+                                    "&quantity=" + availableForSale + "&price=20")
                             .then()
                             .assertThat()
                             .statusCode(200)
                             .body("productID", equalTo(productID))
-                            .body("amount", equalTo(availableForSale))
+                            .body("quantity", equalTo(availableForSale))
                             .body("price", equalTo(20f))
                             .extract().asString();
             LOG.info(makePretty(response));

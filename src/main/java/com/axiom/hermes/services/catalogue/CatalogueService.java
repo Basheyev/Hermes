@@ -155,17 +155,17 @@ public class CatalogueService {
         Map<String, List<InputPart>> multipartForm = dataInput.getFormDataMap();
         // Если форме не содержит полей productID или file - возвращаем HTTP_BAD_REQUEST
         if (!multipartForm.containsKey("productID"))
-            throw new HermesException(HTTP_BAD_REQUEST, "Invalid parameter", "productID field is missing");
+            throw new HermesException(BAD_REQUEST, "Invalid parameter", "productID field is missing");
         if (!multipartForm.containsKey("file"))
-            throw new HermesException(HTTP_BAD_REQUEST, "Invalid parameter", "file field is missing");
+            throw new HermesException(BAD_REQUEST, "Invalid parameter", "file field is missing");
 
         //------------------------------------------------------------------------------------
         // Получаем из формы productID
         //------------------------------------------------------------------------------------
         List<InputPart> productInputParts = multipartForm.get("productID");
         if (productInputParts.size() != 1)
-            throw new HermesException(HTTP_BAD_REQUEST, "Invalid parameter",
-                    "productID field parts amount is 0 or more than 1");
+            throw new HermesException(BAD_REQUEST, "Invalid parameter",
+                    "productID field parts quantity is 0 or more than 1");
         long productID = parseProductID(productInputParts);
         // Пытаемся получить продукт до начала загрузки файла, если нет - кидаем exception
         Product product = catalogue.getProduct(productID);
@@ -174,8 +174,8 @@ public class CatalogueService {
         //------------------------------------------------------------------------------------
         List<InputPart> fileInputParts = multipartForm.get("file");
         if (fileInputParts.size() != 1)
-            throw new HermesException(HTTP_BAD_REQUEST, "Invalid parameter",
-                "file field parts amount is 0 or more than 1");
+            throw new HermesException(BAD_REQUEST, "Invalid parameter",
+                "file field parts quantity is 0 or more than 1");
         InputPart inputPart = fileInputParts.get(0);
         //------------------------------------------------------------------------------------
         // Получаем заголовки
@@ -185,7 +185,7 @@ public class CatalogueService {
         String filename = parseFileName(header);
         // Если Content-Type не image/jpeg - уходим
         if (!header.getFirst("Content-Type").equals("image/jpeg")) {
-            throw new HermesException(HTTP_UNSUPPORTED_MEDIA, "Content-type is not image/jpeg",
+            throw new HermesException(UNSUPPORTED_MEDIA, "Content-type is not image/jpeg",
                     "Only image/jpeg mime type is supported");
         }
         //------------------------------------------------------------------------------------
@@ -230,7 +230,7 @@ public class CatalogueService {
                 productID = Long.parseLong(value);
             }
         } catch (Exception e) {
-            throw new HermesException(HTTP_BAD_REQUEST, "Invalid parameter",
+            throw new HermesException(BAD_REQUEST, "Invalid parameter",
                     "productID is not an integer number");
         }
         return productID;
@@ -272,12 +272,12 @@ public class CatalogueService {
             originalImage = IOUtils.toByteArray(inputStream);
         } catch (IOException e) {
             e.printStackTrace();
-            throw new HermesException(HTTP_UNSUPPORTED_MEDIA, "Cannot load product image body",
+            throw new HermesException(UNSUPPORTED_MEDIA, "Cannot load product image body",
                     "Failed to load '" + filename + "' image.");
         }
         // Проверка ограничения на размер файла
         if (originalImage.length > MAX_IMAGE_SIZE) {
-            throw new HermesException(HTTP_REQUEST_TOO_LARGE, "Image size is too large",
+            throw new HermesException(REQUEST_TOO_LARGE, "Image size is too large",
                     "Maximum JPEG image file size is limited to " + MAX_IMAGE_SIZE + " bytes");
         }
         return originalImage;
@@ -303,7 +303,7 @@ public class CatalogueService {
             thumbnail = thumbnailOutput.toByteArray();
         } catch (IOException e) {
             e.printStackTrace();
-            throw new HermesException(HTTP_UNSUPPORTED_MEDIA, "Cannot create image thumbnail",
+            throw new HermesException(UNSUPPORTED_MEDIA, "Cannot create image thumbnail",
                     "Failed to create '" + filename + "' thumbnail. Product image not saved.");
         }
         return thumbnail;

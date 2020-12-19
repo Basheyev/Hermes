@@ -5,9 +5,11 @@ import com.axiom.hermes.common.exceptions.HermesException;
 import com.axiom.hermes.model.catalogue.Catalogue;
 import com.axiom.hermes.model.catalogue.entities.Product;
 import com.axiom.hermes.model.customers.SalesOrders;
-import com.axiom.hermes.model.customers.entities.SalesOrderEntry;
-import com.axiom.hermes.model.inventory.entities.StockInformation;
+import com.axiom.hermes.model.customers.entities.SalesOrderItem;
+import com.axiom.hermes.model.inventory.entities.StockCard;
 import com.axiom.hermes.model.inventory.entities.StockTransaction;
+
+import static com.axiom.hermes.common.exceptions.HermesException.NOT_FOUND;
 import static com.axiom.hermes.model.inventory.entities.StockTransaction.*;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -32,38 +34,37 @@ public class Inventory {
     // Базовые операции в журнале складского учёта - тут основная бизнес логика и производительность
     //-----------------------------------------------------------------------------------------------------
     @Transactional
-    private StockTransaction debitStock(int opCode, long orderID, long productID, long amount, double price)
+    private StockTransaction incomingStock(int opCode, long orderID, long productID, long quantity, double price)
             throws HermesException {
 
-        if (orderID < 0 || productID < 0 || amount <= 0 || price < 0) return null;
+        if (orderID < 0 || productID < 0 || quantity <= 0 || price < 0) return null;
 
         // Поднимаем складскую карточку товара
-        StockInformation stockInfo = entityManager.find(
-                StockInformation.class, productID,
+        StockCard stockInfo = entityManager.find(
+                StockCard.class, productID,
                 LockModeType.PESSIMISTIC_WRITE);
 
         // Если складской карточки нет
         if (stockInfo==null) {
             // Если такая товарная позиция есть в каталоге
             Product product = catalogue.getProduct(productID);
-            if (product==null) return null;
             // Создаем складскую карточку под товарную позицию
-            stockInfo = createStockInformation(productID);
+            stockInfo = createStockCard(product.getProductID());
         }
 
         // Обновляем данные позиции заказа если операция возврата товара
         if (opCode==DEBIT_SALE_RETURN) {
             // Уменьшаем количество отгруженного товара по позиции заказа
-            salesOrders.subtractFulfilledAmount(orderID, productID, amount);
+            salesOrders.subtractFulfilledQuantity(orderID, productID, quantity);
         }
 
         // Проводим складскую транзакцию в журнале складских транзакций
         StockTransaction stockTransaction = new StockTransaction(orderID, productID,
-                StockTransaction.SIDE_DEBIT, opCode, amount, price);
+                StockTransaction.SIDE_DEBIT, opCode, quantity, price);
         entityManager.persist(stockTransaction);
 
         // Обновляем информацию в складской карточке
-        long stockOnHand = stockInfo.getStockOnHand() + amount;
+        long stockOnHand = stockInfo.getStockOnHand() + quantity;
         long availableForSale = stockOnHand - stockInfo.getCommittedStock();
         stockInfo.setStockOnHand(stockOnHand);
         stockInfo.setAvailableForSale(availableForSale);
@@ -75,56 +76,70 @@ public class Inventory {
 
 
     @Transactional
-    private StockTransaction creditStock(int opCode, long orderID, long productID, long amount, double price)
+    private StockTransaction outgoingStock(int opCode, long orderID, long productID, long quantity, double price)
         throws HermesException{
-        if (orderID < 0 || productID < 0 || amount <= 0 || price < 0) return null;
+        if (orderID < 0 || productID < 0 || quantity <= 0 || price < 0) return null;
 
         // Поднимаем складскую карточку товара
-        StockInformation stockInfo = entityManager.find(
-                StockInformation.class, productID,
+        StockCard stockInfo = entityManager.find(
+                StockCard.class, productID,
                 LockModeType.PESSIMISTIC_WRITE);
 
         // Если складской карточки нет, то и товара нет
-        if (stockInfo==null) return null;
+        if (stockInfo==null) {
+            throw new HermesException(NOT_FOUND, "Inventory out of stock",
+                    "Requested productID=" + productID + " stock on hand not found.");
+        }
         // Если не хватает остатков
         long stockOnHand = stockInfo.getStockOnHand();
-        if (stockOnHand < amount) return null;
+        if (stockOnHand < quantity) {
+            throw new HermesException(NOT_FOUND, "Inventory out of stock",
+                    "ProductID=" + productID + " stock on hand: " + stockOnHand + " requested quantity: " + quantity);
+        }
         long committedStock = stockInfo.getCommittedStock();
         long availableForSale = stockInfo.getAvailableForSale();
 
         // Если это операции Продажи
         if (opCode==CREDIT_SALE) {
             // Обновляем данные позиции заказа чтобы снять бронь с указанного количества
-            SalesOrderEntry salesOrderEntry = salesOrders.addFulfilledAmount(orderID, productID, amount);
-            // Если такой брони нет - продаём незабронированных остатков (AvailableForSale)
-            if (salesOrderEntry==null) {
-                // Получаем забронированное подтвержденными заказами количество товара
-                committedStock = salesOrders.getCommittedAmount(productID);
-                // Считаем количество доступное для продажи (не забронированное)
-                availableForSale = stockInfo.getStockOnHand() - committedStock;
-                // Проверяем хватает ли незабронированных остатков
-                if (availableForSale < amount) return null;
-                // Если хватает берем официальную цену из каталога
-                price = catalogue.getProduct(productID).getPrice();
-                // Пересчитываем остатки для складской карточки
-                stockOnHand -= amount;
-                availableForSale -= amount;
-            } else {
+            SalesOrderItem salesOrderItem;
+            try {
+                salesOrderItem = salesOrders.addFulfilledQuantity(orderID, productID, quantity);
                 // Если такая бронь есть - продаём с забронированных остатков (CommittedStock)
-                price = salesOrderEntry.getPrice();              // Берем цену из заказа
-                stockOnHand -= amount;                           // Пересчитываем общие остатки
-                committedStock -= amount;                        // Пересчитываем забронированные остатки
+                price = salesOrderItem.getPrice();              // Берем цену из заказа
+                stockOnHand -= quantity;                        // Пересчитываем общие остатки
+                committedStock -= quantity;                     // Пересчитываем забронированные остатки
+            } catch (HermesException exception) {
+                if (exception.getStatus()== NOT_FOUND) {
+                    // Получаем забронированное подтвержденными заказами количество товара
+                    committedStock = salesOrders.getCommittedquantity(productID);
+                    // Считаем количество доступное для продажи (не забронированное)
+                    availableForSale = stockInfo.getStockOnHand() - committedStock;
+                    // Проверяем хватает ли незабронированных остатков
+                    if (availableForSale < quantity) {
+                        throw new HermesException(NOT_FOUND, "Inventory not available for sale",
+                                "ProductID=" + productID +
+                                " stock on hand: " + stockOnHand +
+                                " available for sale: " + availableForSale +
+                                " requested quantity: " + quantity);
+                    }
+                    // Если хватает берем официальную цену из каталога
+                    price = catalogue.getProduct(productID).getPrice();
+                    // Пересчитываем остатки для складской карточки
+                    stockOnHand -= quantity;
+                    availableForSale -= quantity;
+                } else throw exception;
             }
         } else {
             // Для всех остальных операций уменьшаем stockOnHand и availableForSale
-            stockOnHand -= amount;
-            availableForSale -= amount;
+            stockOnHand -= quantity;
+            availableForSale -= quantity;
             if (availableForSale < 0) availableForSale = 0;
         }
 
         // Проводим складскую транзакцию в журнале складских транзакций
         StockTransaction stockTransaction = new StockTransaction(orderID, productID,
-                StockTransaction.SIDE_CREDIT, opCode, amount, price);
+                StockTransaction.SIDE_CREDIT, opCode, quantity, price);
         entityManager.persist(stockTransaction);
 
         // Обновляем складскую карточку
@@ -144,62 +159,62 @@ public class Inventory {
     /**
      * Регистрация покупки товара (приход)
      * @param productID код товарной позиции
-     * @param amount количество
+     * @param quantity количество
      * @param price цена
      * @return true - если проведена, false - если нет
      */
     @Transactional
-    public StockTransaction purchase(long orderID, long productID, long amount, double price)
+    public StockTransaction purchase(long orderID, long productID, long quantity, double price)
             throws HermesException {
-        return debitStock(DEBIT_PURCHASE, orderID, productID, amount, price);
+        return incomingStock(DEBIT_PURCHASE, orderID, productID, quantity, price);
     }
 
     /**
      * Продажа товара (расход)
      * @param orderID заказа
      * @param productID код товарной позиции
-     * @param amount количество
+     * @param quantity количество
      * @return true - если проведена, false - если нет товара
      */
     @Transactional
-    public StockTransaction sale(long orderID, long productID, long amount) throws HermesException  {
-        return creditStock(CREDIT_SALE, orderID, productID, amount, 0);
+    public StockTransaction sale(long orderID, long productID, long quantity) throws HermesException  {
+        return outgoingStock(CREDIT_SALE, orderID, productID, quantity, 0);
     }
 
     /**
      * Регистрация возврата товара (приход)
      * @param productID код товарной позиции
-     * @param amount количество
+     * @param quantity количество
      * @param price цена
      * @return true - если проведена, false - если нет
      */
     @Transactional
-    public StockTransaction saleReturn(long orderID, long productID, long amount, double price) throws HermesException {
-        return debitStock(DEBIT_SALE_RETURN, orderID, productID, amount, price);
+    public StockTransaction saleReturn(long orderID, long productID, long quantity, double price) throws HermesException {
+        return incomingStock(DEBIT_SALE_RETURN, orderID, productID, quantity, price);
     }
 
     /**
      * Возврат поставщику закупленного товара (расход)
      * @param productID код товарной позиции
-     * @param amount количество
+     * @param quantity количество
      * @param price цена
      * @return true - если проведена, false - если нет
      */
     @Transactional
-    public StockTransaction purchaseReturn(long orderID, long productID, long amount, double price) throws HermesException {
-        return creditStock(CREDIT_PURCHASE_RETURN, orderID, productID, amount, price);
+    public StockTransaction purchaseReturn(long orderID, long productID, long quantity, double price) throws HermesException {
+        return outgoingStock(CREDIT_PURCHASE_RETURN, orderID, productID, quantity, price);
     }
 
     /**
      * Списание товара (расход)
      * @param productID код товарной позиции
-     * @param amount количество
+     * @param quantity количество
      * @param price цена
      * @return true - если проведена, false - если нет
      */
     @Transactional
-    public StockTransaction writeOff(long orderID, long productID, long amount, double price) throws HermesException {
-        return creditStock(CREDIT_WRITE_OFF, orderID, productID, amount, price);
+    public StockTransaction writeOff(long orderID, long productID, long quantity, double price) throws HermesException {
+        return outgoingStock(CREDIT_WRITE_OFF, orderID, productID, quantity, price);
     }
 
     //-----------------------------------------------------------------------------------------------------
@@ -244,10 +259,10 @@ public class Inventory {
      * @return список складских карточек
      */
     @Transactional
-    public List<StockInformation> getAllStocks() {
-        List<StockInformation> allStocks;
-        String query = "SELECT a FROM StockInformation a";
-        allStocks = entityManager.createQuery(query, StockInformation.class).getResultList();
+    public List<StockCard> getAllStocks() {
+        List<StockCard> allStocks;
+        String query = "SELECT a FROM StockCard a";
+        allStocks = entityManager.createQuery(query, StockCard.class).getResultList();
         return allStocks;
     }
 
@@ -258,8 +273,8 @@ public class Inventory {
      * @return складская карточка
      */
     @Transactional
-    public StockInformation createStockInformation(long productID) {
-        StockInformation stockInfo = new StockInformation(productID);
+    public StockCard createStockCard(long productID) {
+        StockCard stockInfo = new StockCard(productID);
         entityManager.persist(stockInfo);
         return stockInfo;
     }
@@ -271,27 +286,36 @@ public class Inventory {
      * @return складская карточка
      */
     @Transactional
-    public StockInformation getStockInformation(long productID) throws HermesException {
-        StockInformation stockInfo = entityManager.find(StockInformation.class, productID);
+    public StockCard getStockCard(long productID) throws HermesException {
+        StockCard stockInfo = entityManager.find(StockCard.class, productID);
         // Если складской карточки нет, то создаём её если такая товарная позиция есть
         if (stockInfo==null) {
             Product product = catalogue.getProduct(productID);
-            if (product==null) return null;
-            stockInfo = createStockInformation(productID);
+            stockInfo = createStockCard(product.getProductID());
             return stockInfo;
         }
         return stockInfo;
     }
 
+    /**
+     * Обновляет в складской карточке количество забронированнного товара по данным подтвержденных заказов
+     * @param productID товарная позиция
+     * @return обновленная складская карточка
+     */
     @Transactional
-    public StockInformation updateCommittedStockInformation(long productID) {
+    public StockCard updateCommittedStock(long productID) throws HermesException {
         // Поднимаем складскую карточку товара
-        StockInformation stockInfo = entityManager.find(
-                StockInformation.class, productID,
+        StockCard stockInfo = entityManager.find(
+                StockCard.class, productID,
                 LockModeType.PESSIMISTIC_WRITE);
 
+        if (stockInfo==null) {
+            throw new HermesException(NOT_FOUND, "Inventory stock card missing",
+                    "Requested productID=" + productID + " stock card not found.");
+        }
+
         // Обновляем информацию в складской карточке
-        long committedStock = salesOrders.getCommittedAmount(productID);
+        long committedStock = salesOrders.getCommittedquantity(productID);
         long availableForSale = stockInfo.getStockOnHand() - committedStock;
         if (availableForSale < 0) availableForSale = 0;
         stockInfo.setCommittedStock(committedStock);
@@ -306,10 +330,10 @@ public class Inventory {
      * @return список складских карточек товарных позиций требующих пополнения запасов
      */
     @Transactional
-    public List<StockInformation> getReplenishmentStocks() {
-        List<StockInformation> stocks;
-        String query = "SELECT a FROM StockInformation a WHERE a.stockOnHand <= a.reorderPoint";
-        stocks = entityManager.createQuery(query, StockInformation.class).getResultList();
+    public List<StockCard> getReplenishmentStocks() {
+        List<StockCard> stocks;
+        String query = "SELECT a FROM StockCard a WHERE a.stockOnHand <= a.reorderPoint";
+        stocks = entityManager.createQuery(query, StockCard.class).getResultList();
         return stocks;
     }
 

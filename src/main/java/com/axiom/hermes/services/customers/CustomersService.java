@@ -1,5 +1,6 @@
 package com.axiom.hermes.services.customers;
 
+import com.axiom.hermes.common.exceptions.HermesException;
 import com.axiom.hermes.model.catalogue.entities.Product;
 import com.axiom.hermes.model.customers.Customers;
 import com.axiom.hermes.model.customers.entities.Customer;
@@ -31,7 +32,7 @@ public class CustomersService {
 
     @POST
     @Path("/addCustomer")
-    public Response addCustomer(Customer newCustomer) {
+    public Response addCustomer(Customer newCustomer) throws HermesException {
         Customer customer = customers.addCustomer(newCustomer);
         if (customer==null) return Response.status(Response.Status.FORBIDDEN).build();
         return Response.ok(customer).build();
@@ -39,34 +40,29 @@ public class CustomersService {
 
     @GET
     @Path("/getCustomer")
-    public Response getCustomer(@QueryParam("customerID") long customerID) {
+    public Response getCustomer(@QueryParam("customerID") long customerID) throws HermesException {
         Customer customer = customers.getCustomer(customerID);
-        if (customer==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(customer).build();
     }
 
     @GET
     @Path("/getCustomerByMobile")
-    public Response getCustomerByMobile(@QueryParam("mobile") String mobile) {
+    public Response getCustomerByMobile(@QueryParam("mobile") String mobile) throws HermesException {
         Customer customer = customers.getCustomerByMobile(mobile);
-        if (customer==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(customer).build();
     }
 
     @POST
     @Path("/updateCustomer")
-    public Response updateCustomer(Customer customer) {
+    public Response updateCustomer(Customer customer) throws HermesException {
         Customer managed = customers.updateCustomer(customer);
-        if (managed==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(managed).build();
     }
 
     @GET
     @Path("/removeCustomer")
-    public Response removeCustomer(@QueryParam("customerID") long customerID) {
-        if (!customers.removeCustomer(customerID)) {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
+    public Response removeCustomer(@QueryParam("customerID") long customerID) throws HermesException {
+        customers.removeCustomer(customerID);
         return Response.ok().build();
     }
 

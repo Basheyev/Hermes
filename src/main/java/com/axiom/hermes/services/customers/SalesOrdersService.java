@@ -3,7 +3,7 @@ package com.axiom.hermes.services.customers;
 import com.axiom.hermes.common.exceptions.HermesException;
 import com.axiom.hermes.model.customers.SalesOrders;
 import com.axiom.hermes.model.customers.entities.SalesOrder;
-import com.axiom.hermes.model.customers.entities.SalesOrderEntry;
+import com.axiom.hermes.model.customers.entities.SalesOrderItem;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;
@@ -30,7 +30,6 @@ public class SalesOrdersService {
                                  @QueryParam("endTime") long endTime,
                                  @QueryParam("status") int status) {
         List<SalesOrder> orders = salesOrders.getAllOrders(startTime, endTime, status);
-        if (orders==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(orders).build();
     }
 
@@ -38,39 +37,35 @@ public class SalesOrdersService {
     @Path("/getOrders")
     public Response getOrders(@QueryParam("customerID") long customerID, @QueryParam("status") int status) {
         List<SalesOrder> orders = salesOrders.getOrders(customerID, status);
-        if (orders==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(orders).build();
     }
 
     @GET
     @Path("/addOrder")
-    public Response addOrder(@QueryParam("customerID") long customerID) {
+    public Response addOrder(@QueryParam("customerID") long customerID) throws HermesException {
         SalesOrder order = salesOrders.addOrder(customerID);
-        if (order==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(order).build();
     }
 
     @GET
     @Path("/getOrder")
-    public Response getOrder(@QueryParam("orderID") long orderID) {
+    public Response getOrder(@QueryParam("orderID") long orderID) throws HermesException {
         SalesOrder order = salesOrders.getOrder(orderID);
-        if (order==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(order).build();
     }
 
     @GET
     @Path("/changeStatus")
-    public Response changeStatus(@QueryParam("orderID") long orderID, @QueryParam("status") int status) {
+    public Response changeStatus(@QueryParam("orderID") long orderID, @QueryParam("status") int status)
+        throws HermesException {
         SalesOrder order = salesOrders.changeStatus(orderID, status);
-        if (order==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(order).build();
     }
 
     @GET
     @Path("/removeOrder")
-    public Response removeOrder(@QueryParam("orderID") long orderID) {
-        boolean result = salesOrders.removeOrder(orderID);
-        if (!result) return Response.status(Response.Status.NOT_FOUND).build();
+    public Response removeOrder(@QueryParam("orderID") long orderID) throws HermesException {
+        salesOrders.removeOrder(orderID);
         return Response.ok().build();
     }
 
@@ -79,16 +74,14 @@ public class SalesOrdersService {
     @GET
     @Path("/getOrderEntries")
     public Response getOrderEntries(@QueryParam("orderID") long orderID) {
-        List<SalesOrderEntry> entries = salesOrders.getOrderEntries(orderID);
-        if (entries==null) return Response.status(Response.Status.NOT_FOUND).build();
+        List<SalesOrderItem> entries = salesOrders.getOrderEntries(orderID);
         return Response.ok(entries).build();
     }
 
     @GET
     @Path("/getOrderEntry")
     public Response getOrderEntry(@QueryParam("entryID") long entryID) throws HermesException {
-        SalesOrderEntry entry = salesOrders.getOrderEntry(entryID);
-        if (entry==null) return Response.status(Response.Status.NOT_FOUND).build();
+        SalesOrderItem entry = salesOrders.getOrderEntry(entryID);
         return Response.ok(entry).build();
     }
 
@@ -97,9 +90,8 @@ public class SalesOrdersService {
     public Response addOrderEntry(
             @QueryParam("orderID") long orderID,
             @QueryParam("productID") long productID,
-            @QueryParam("amount") long amount) throws HermesException {
-        SalesOrderEntry entry = salesOrders.addOrderEntry(orderID, productID, amount);
-        if (entry==null) return Response.status(Response.Status.NOT_FOUND).build();
+            @QueryParam("quantity") long quantity) throws HermesException {
+        SalesOrderItem entry = salesOrders.addOrderEntry(orderID, productID, quantity);
         return Response.ok(entry).build();
     }
 
@@ -108,15 +100,14 @@ public class SalesOrdersService {
     public Response updateOrderEntry(
             @QueryParam("entryID") long entryID,
             @QueryParam("productID") long newProductID,
-            @QueryParam("amount") long newAmount) throws HermesException {
-        SalesOrderEntry entry = salesOrders.updateOrderEntry(entryID, newProductID, newAmount);
-        if (entry==null) return Response.status(Response.Status.NOT_FOUND).build();
+            @QueryParam("quantity") long newquantity) throws HermesException {
+        SalesOrderItem entry = salesOrders.updateOrderEntry(entryID, newProductID, newquantity);
         return Response.ok(entry).build();
     }
 
     @GET
     @Path("/removeOrderEntry")
-    public Response removeOrderEntry(@QueryParam("entryID") long entryID) {
+    public Response removeOrderEntry(@QueryParam("entryID") long entryID) throws HermesException {
         boolean result = salesOrders.removeOrderEntry(entryID);
         if (!result) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok().build();
