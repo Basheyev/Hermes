@@ -1,5 +1,6 @@
 package com.axiom.hermes.services.catalogue;
 
+import com.axiom.hermes.common.exceptions.HermesException;
 import com.axiom.hermes.model.catalogue.Catalogue;
 import com.axiom.hermes.model.catalogue.entities.Product;
 import com.axiom.hermes.model.catalogue.entities.ProductImage;
@@ -18,6 +19,8 @@ import java.io.*;
 import java.util.List;
 import java.util.Map;
 
+import static com.axiom.hermes.common.exceptions.HermesException.*;
+
 /**
  * Сервис каталога товаров
  */
@@ -32,12 +35,7 @@ public class CatalogueService {
     public static final int MAX_THUMBNAIL_SIZE = 0xFFFF;      // 65Kb
     public static final int MAX_THUMBNAIL_DIMENSION = 128;    // 128x128px
 
-    public static final int INVALID = -1;
-    public static final int HTTP_BAD_REQUEST = 400;
-    public static final int HTTP_NOT_FOUND = 404;
-    public static final int HTTP_REQUEST_TOO_LARGE =413;
-    public static final int HTTP_UNSUPPORTED_MEDIA = 415;
-    public static final int HTTP_INTERNAL_SERVER_ERROR = 500;
+    private static final int INVALID = -1;
 
     @Inject
     Catalogue catalogue;
@@ -74,9 +72,8 @@ public class CatalogueService {
      */
     @GET
     @Path("/getProduct")
-    public Response getProduct(@QueryParam("productID") long productID) {
+    public Response getProduct(@QueryParam("productID") long productID) throws HermesException {
         Product product = catalogue.getProduct(productID);
-        if (product==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(product).build();
     }
 
@@ -87,9 +84,8 @@ public class CatalogueService {
      */
     @POST
     @Path("/addProduct")
-    public Response addProduct(Product newProduct) {
+    public Response addProduct(Product newProduct) throws HermesException {
         Product product = catalogue.addProduct(newProduct);
-        if (product==null) return Response.status(Response.Status.FORBIDDEN).build();
         return Response.ok(product).build();
     }
 
@@ -100,20 +96,15 @@ public class CatalogueService {
      */
     @POST
     @Path("/updateProduct")
-    public Response updateProduct(Product product) {
+    public Response updateProduct(Product product) throws HermesException {
         Product managed = catalogue.updateProduct(product);
-        if (managed==null) {
-            return Response.status(HTTP_NOT_FOUND,
-                   "productID=" + product.getProductID() + " not found").build();
-        }
         return Response.ok(managed).build();
     }
 
     @GET
     @Path("/removeProduct")
-    public Response removeProduct(@QueryParam("productID") long productID) {
-        boolean result = catalogue.removeProduct(productID);
-        if (!result) return Response.status(Response.Status.FORBIDDEN).build();
+    public Response removeProduct(@QueryParam("productID") long productID) throws HermesException {
+        catalogue.removeProduct(productID);
         return Response.ok().build();
     }
 
@@ -124,20 +115,12 @@ public class CatalogueService {
      */
     @GET
     @Path("/downloadThumbnail")
-    public Response downloadThumbnail(@QueryParam("productID") long productID) {
+    public Response downloadThumbnail(@QueryParam("productID") long productID) throws HermesException {
         byte[] bytes = catalogue.getProductThumbnail(productID);
-        if (bytes==null) {
-            LOG.info("Thumbnail image of productID=" + productID + " is not found.");
-            return Response.status(HTTP_NOT_FOUND, "productID=" + productID + " not found").build();
-        }
         String filename = "thumbnail" + productID + ".jpg";
         Response.ResponseBuilder responseBuilder = Response.ok(bytes);
         responseBuilder.header("Content-Disposition", "inline; filename=\"" + filename + "\"")
-                .header("Content-Type", "image/jpeg");
-
-        LOG.info("Downloading thumbnail image of productID=" + productID +
-                " filename = \"" + filename + "\" size=" + bytes.length + " bytes.");
-
+                       .header("Content-Type", "image/jpeg");
         return responseBuilder.build();
     }
 
@@ -148,17 +131,13 @@ public class CatalogueService {
      */
     @GET
     @Path("/downloadImage")
-    public Response downloadImage(@QueryParam("productID") long productID) {
+    public Response downloadImage(@QueryParam("productID") long productID) throws HermesException {
         ProductImage productImage = catalogue.getProductImage(productID);
-        if (productImage==null) return Response.status(HTTP_NOT_FOUND, "imageID=" + productID + " not found").build();
         byte[] imageBytes = productImage.getImage();
         String filename = productImage.getFilename();
         Response.ResponseBuilder responseBuilder = Response.ok(imageBytes);
         responseBuilder.header("Content-Disposition", "inline; filename=\"" + filename + "\"")
-                .header("Content-Type", "image/jpeg");
-
-        LOG.info("Downloading image of productID=" + productID +
-                " filename = \"" + filename + "\" size=" + imageBytes.length + " bytes.");
+                       .header("Content-Type", "image/jpeg");
         return responseBuilder.build();
     }
 
@@ -171,84 +150,79 @@ public class CatalogueService {
     @POST
     @Path("/uploadImage")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response uploadImage(MultipartFormDataInput dataInput) {
+    public Response uploadImage(MultipartFormDataInput dataInput) throws HermesException {
         // Получаем многосоставную форму с данными
         Map<String, List<InputPart>> multipartForm = dataInput.getFormDataMap();
         // Если форме не содержит полей productID или file - возвращаем HTTP_BAD_REQUEST
-        if (!multipartForm.containsKey("productID") || !multipartForm.containsKey("file")) {
-            return Response.status(HTTP_BAD_REQUEST).build();
+        if (!multipartForm.containsKey("productID"))
+            throw new HermesException(HTTP_BAD_REQUEST, "Invalid parameter", "productID field is missing");
+        if (!multipartForm.containsKey("file"))
+            throw new HermesException(HTTP_BAD_REQUEST, "Invalid parameter", "file field is missing");
+
+        //------------------------------------------------------------------------------------
+        // Получаем из формы productID
+        //------------------------------------------------------------------------------------
+        List<InputPart> productInputParts = multipartForm.get("productID");
+        if (productInputParts.size() != 1)
+            throw new HermesException(HTTP_BAD_REQUEST, "Invalid parameter",
+                    "productID field parts amount is 0 or more than 1");
+        long productID = parseProductID(productInputParts);
+        // Пытаемся получить продукт до начала загрузки файла, если нет - кидаем exception
+        Product product = catalogue.getProduct(productID);
+        //------------------------------------------------------------------------------------
+        // Получаем из формы file (проверяем что файл один)
+        //------------------------------------------------------------------------------------
+        List<InputPart> fileInputParts = multipartForm.get("file");
+        if (fileInputParts.size() != 1)
+            throw new HermesException(HTTP_BAD_REQUEST, "Invalid parameter",
+                "file field parts amount is 0 or more than 1");
+        InputPart inputPart = fileInputParts.get(0);
+        //------------------------------------------------------------------------------------
+        // Получаем заголовки
+        //------------------------------------------------------------------------------------
+        MultivaluedMap<String, String> header = inputPart.getHeaders();
+        // Получаем название файла
+        String filename = parseFileName(header);
+        // Если Content-Type не image/jpeg - уходим
+        if (!header.getFirst("Content-Type").equals("image/jpeg")) {
+            throw new HermesException(HTTP_UNSUPPORTED_MEDIA, "Content-type is not image/jpeg",
+                    "Only image/jpeg mime type is supported");
         }
+        //------------------------------------------------------------------------------------
+        // Получаем тело файла и создаём миниатюрное изображение
+        //------------------------------------------------------------------------------------
+        byte[] originalImage = loadFile(inputPart, filename);
+        byte[] thumbnail = createThumbnail(originalImage, filename);
 
-        try {
-            //------------------------------------------------------------------------------------
-            // Получаем из формы productID
-            //------------------------------------------------------------------------------------
-            List<InputPart> productInputParts = multipartForm.get("productID");
-            if (productInputParts.size() != 1) return Response.status(HTTP_BAD_REQUEST).build();
-            long productID = parseProductID(productInputParts);
-            if (productID==INVALID) return Response.status(HTTP_BAD_REQUEST).build();
-            //------------------------------------------------------------------------------------
-            // Получаем из формы file (проверяем что файл один)
-            //------------------------------------------------------------------------------------
-            List<InputPart> fileInputParts = multipartForm.get("file");
-            if (fileInputParts.size() != 1) return Response.status(HTTP_BAD_REQUEST).build();
-            InputPart inputPart = fileInputParts.get(0);
-            //------------------------------------------------------------------------------------
-            // Получаем заголовки
-            //------------------------------------------------------------------------------------
-            MultivaluedMap<String, String> header = inputPart.getHeaders();
-            // Получаем название файла
-            String fileName = parseFileName(header);
-            // Если Content-Type не image/jpeg - уходим
-            if (!header.getFirst("Content-Type").equals("image/jpeg")) {
-                return Response.status(HTTP_UNSUPPORTED_MEDIA).build();
-            }
-            //------------------------------------------------------------------------------------
-            // Получаем тело файла
-            //------------------------------------------------------------------------------------
-            InputStream inputStream = inputPart.getBody(InputStream.class,null);
-            byte[] originalImage = IOUtils.toByteArray(inputStream);
-            // Проверка ограничения на размер файла
-            if (originalImage.length > MAX_IMAGE_SIZE) {
-                return Response.status(HTTP_REQUEST_TOO_LARGE).build();
-            }
-            // Формируем миниатюрное изображение 128x128 image/jpeg (до 64Kb)
-            ByteArrayOutputStream thumbnailOutput = new ByteArrayOutputStream(MAX_THUMBNAIL_SIZE);
-            Thumbnails.of(new ByteArrayInputStream(originalImage))
-                    .size(MAX_THUMBNAIL_DIMENSION,MAX_THUMBNAIL_DIMENSION)
-                    .toOutputStream(thumbnailOutput);
-            byte[] thumbnail = thumbnailOutput.toByteArray();
-            //------------------------------------------------------------------------------------
-            // Создать объект ProductImage и сохранить его в базе данных
-            //------------------------------------------------------------------------------------
-            ProductImage productImage = new ProductImage(productID, fileName, originalImage, thumbnail);
-            if (!catalogue.uploadImage(productImage)) {
-                return Response.status(HTTP_NOT_FOUND, "productID=" + productID + " not found").build();
-            }
+        //------------------------------------------------------------------------------------
+        // Создаем объект ProductImage и сохраняем его в базе данных
+        //------------------------------------------------------------------------------------
+        ProductImage productImage = new ProductImage(product.productID, filename, originalImage, thumbnail);
+        catalogue.uploadImage(productImage);
 
-            LOG.info(
-                    "Image uploaded" +
-                    " ProductID=" + productID +
-                    " filename=\"" + fileName + "\"" +
-                    " size: " + originalImage.length + " bytes" +
-                    " thumbnail size:" + thumbnail.length + " bytes");
+        // Отправляем ответ клиентом с мини отчётом о загруженном изображении
+        String response =
+                "{\n"+
+                "    \"productID\": " + product.productID + ",\n" +
+                "    \"filename\": \"" + filename + "\",\n" +
+                "    \"imageSize\": " + originalImage.length + ",\n" +
+                "    \"thumbnailSize\": " + thumbnail.length + "\n" +
+                "}";
 
-            return Response.ok().build();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Response.status(HTTP_INTERNAL_SERVER_ERROR).build();
-        }
+        return Response.ok().entity(response).build();
 
     }
 
+    //----------------------------------------------------------------------------------------------------
+    // Парсинг частей формы и загрузка файла
+    //----------------------------------------------------------------------------------------------------
 
     /**
      * Получить из поля формы значение поля productID
      * @param productInputParts заголовок части формы
      * @return productID товарной позиции
      */
-    private long parseProductID(List<InputPart> productInputParts) {
+    private long parseProductID(List<InputPart> productInputParts) throws HermesException {
         long productID = INVALID;
         try {
             if (productInputParts != null && productInputParts.size() > 0) {
@@ -256,7 +230,8 @@ public class CatalogueService {
                 productID = Long.parseLong(value);
             }
         } catch (Exception e) {
-            // e.printStackTrace();
+            throw new HermesException(HTTP_BAD_REQUEST, "Invalid parameter",
+                    "productID is not an integer number");
         }
         return productID;
     }
@@ -282,21 +257,56 @@ public class CatalogueService {
         return "unknown";
     }
 
-    //-------------------------------------------------------------------------
-    // Для целей тестирования
-    //-------------------------------------------------------------------------
-    @GET
-    @Path("/generate")
-    public Response generateProducts() {
-        catalogue.generateProducts();
-        return Response.ok().build();
+    /**
+     * Загружает файл изображения из multipart/form-data
+     * @param inputPart часть multipart/form-data
+     * @param filename названия файла
+     * @return массив байт файла
+     * @throws HermesException
+     */
+    private byte[] loadFile(InputPart inputPart, String filename) throws HermesException {
+        InputStream inputStream;
+        byte[] originalImage;
+        try {
+            inputStream = inputPart.getBody(InputStream.class,null);
+            originalImage = IOUtils.toByteArray(inputStream);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HermesException(HTTP_UNSUPPORTED_MEDIA, "Cannot load product image body",
+                    "Failed to load '" + filename + "' image.");
+        }
+        // Проверка ограничения на размер файла
+        if (originalImage.length > MAX_IMAGE_SIZE) {
+            throw new HermesException(HTTP_REQUEST_TOO_LARGE, "Image size is too large",
+                    "Maximum JPEG image file size is limited to " + MAX_IMAGE_SIZE + " bytes");
+        }
+        return originalImage;
     }
 
-    @GET
-    @Path("/reset")
-    public Response resetProducts() {
-        catalogue.resetProducts();
-        return Response.ok().build();
+
+    /**
+     * Создает миниатюру 128x128 из оригинального изображения
+     * @param originalImage оригинальное изображение
+     * @param filename название файла
+     * @return массив байт миниатюры в формате JPEG
+     * @throws HermesException
+     */
+    private byte[] createThumbnail(byte[] originalImage, String filename) throws HermesException {
+        // Формируем буфер под миниатюрное изображение 128x128 image/jpeg (до 64Kb)
+        ByteArrayOutputStream thumbnailOutput = new ByteArrayOutputStream(MAX_THUMBNAIL_SIZE);
+        byte[] thumbnail;
+        try {
+            // Уменьшаем изображение изображение до 128x128
+            Thumbnails.of(new ByteArrayInputStream(originalImage))
+                    .size(MAX_THUMBNAIL_DIMENSION, MAX_THUMBNAIL_DIMENSION)
+                    .toOutputStream(thumbnailOutput);
+            thumbnail = thumbnailOutput.toByteArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new HermesException(HTTP_UNSUPPORTED_MEDIA, "Cannot create image thumbnail",
+                    "Failed to create '" + filename + "' thumbnail. Product image not saved.");
+        }
+        return thumbnail;
     }
 
 

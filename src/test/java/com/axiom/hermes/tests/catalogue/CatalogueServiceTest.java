@@ -69,7 +69,29 @@ public class CatalogueServiceTest {
     }
 
     //---------------------------------------------------------------------------------------------------
+    @Test
+    @Order(2)
+    public void addProductInvalid() {
+        String response =
+            given()
+                .header("Content-Type", "application/json")
+                .body("{\n" +
+                        "    \"productID\": 1,\n" +
+                        "    \"name\": \"CUP OF INVALID COFFEE\",\n" +
+                        "    \"description\": \"MACCOFFEE\",\n" +
+                        "    \"price\": 5,\n" +
+                        "    \"vendorCode\": \"CCMAC\"\n" +
+                        "}")
+            .when()
+                .post("/catalogue/addProduct")
+            .then()
+                .statusCode(400)
+            .extract().asString();
 
+        LOG.info("Invalid product add response:\n" +response);
+    }
+
+    //---------------------------------------------------------------------------------------------------
     @Test
     @Order(3)
     public void getProduct() {
@@ -140,6 +162,7 @@ public class CatalogueServiceTest {
     public void uploadImage() {
         File imageFile = new File(imagePath + fileName);
         imageSize = imageFile.length();
+        String response =
         given()
                 .multiPart("productID", productID)
                 .multiPart("file", imageFile,"image/jpeg")
@@ -147,7 +170,10 @@ public class CatalogueServiceTest {
         .when()
                 .post("/catalogue/uploadImage")
         .then()
-                .statusCode(200);
+                .statusCode(200)
+                .body("imageSize", equalTo((int)imageSize))
+        .extract().asString();
+        LOG.info("Upload image:\n" + response);
     }
 
     @Test
@@ -155,14 +181,20 @@ public class CatalogueServiceTest {
     public void uploadImageChange() {
         File imageFile = new File(imagePath + changedFileName);
         imageSize = imageFile.length();
+        String response =
         given()
-                .multiPart("productID", productID)
-                .multiPart("file", imageFile,"image/jpeg")
-                .accept(ContentType.JSON)
-                .when()
-                .post("/catalogue/uploadImage")
-                .then()
-                .statusCode(200);
+            .multiPart("productID", productID)
+            .multiPart("file", imageFile,"image/jpeg")
+            .accept(ContentType.JSON)
+        .when()
+            .post("/catalogue/uploadImage")
+        .then()
+            .statusCode(200)
+            .body("imageSize", equalTo((int)imageSize))
+        .extract()
+            .asString();
+
+        LOG.info("Upload image:\n" + response);
     }
 
 
@@ -171,15 +203,20 @@ public class CatalogueServiceTest {
     public void uploadImageBigFile() {
         // Проверяем защиту на большие файлы
         File bigImageFile = new File(imagePath + bigFileName);
+        String response =
         given()
-                .multiPart("productID", productID)
-                .multiPart("file", bigImageFile,"image/jpeg")
-                .accept(ContentType.JSON)
-                .when()
-                .post("/catalogue/uploadImage")
-                .then()
-                .assertThat()
-                .statusCode(413);
+            .multiPart("productID", productID)
+            .multiPart("file", bigImageFile,"image/jpeg")
+            .accept(ContentType.JSON)
+        .when()
+            .post("/catalogue/uploadImage")
+        .then()
+            .assertThat()
+            .statusCode(413)
+        .extract()
+            .asString();
+
+        LOG.info("Upload big image:\n" + response);
     }
 
     //---------------------------------------------------------------------------------------------------
@@ -221,13 +258,14 @@ public class CatalogueServiceTest {
 
             byte[] image =
                     given().
-                            when().get("/catalogue/downloadThumbnail?productID=" + productID).
-                            then().statusCode(200).
-                            assertThat().
-                            header("Content-Disposition", containsString("thumbnail" + productID + ".jpg")).
-                            header("Content-Type", equalTo("image/jpeg")).
-                            extract().
-                            asByteArray();
+                    when()
+                        .get("/catalogue/downloadThumbnail?productID=" + productID).
+                    then()
+                        .statusCode(200).
+                        assertThat().
+                        header("Content-Disposition", containsString("thumbnail" + productID + ".jpg")).
+                        header("Content-Type", equalTo("image/jpeg")).
+                    extract().asByteArray();
 
             assertTrue(image.length > 0);
             try {
@@ -245,16 +283,17 @@ public class CatalogueServiceTest {
     @Test
     @Order(10)
     public void removeProduct() {
-        String response =
+
         given().
                 when().get("/catalogue/removeProduct?productID=" + productID).
-                then().statusCode(200).extract().asString();
+                then().assertThat().statusCode(200).extract().asString();
 
+        String response =
         given().
                 when().get("/catalogue/getProduct?productID=" + productID).
-                then().statusCode(404).assertThat();
+                then().assertThat().statusCode(404).extract().asString();
 
-        LOG.info("Product deleted ProductID=" + productID);
+        LOG.info("Product deleted ProductID=" + productID + " check response:\n" + response);
     }
 
 }
