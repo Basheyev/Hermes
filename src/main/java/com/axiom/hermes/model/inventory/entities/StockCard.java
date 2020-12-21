@@ -24,6 +24,7 @@ public class StockCard {
         this.committedStock = 0;
         this.availableForSale = 0;
         this.reorderPoint = 0;
+        this.timestamp = System.currentTimeMillis();
     }
 
     public long getProductID() {

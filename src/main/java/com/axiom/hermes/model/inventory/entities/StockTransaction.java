@@ -18,17 +18,16 @@ import javax.persistence.*;
 public class StockTransaction {
 
     //-------------------------------------------------------------------------------------
-    public static final int SIDE_DEBIT = 1;              // Приход (дебет)
-    public static final int SIDE_CREDIT = 2;             // Расход (кредит)
+    public static final int SIDE_IN = 1;              // Приход (дебет)
+    public static final int SIDE_OUT = 2;             // Расход (кредит)
     //-------------------------------------------------------------------------------------
-    public static final int DEBIT_PURCHASE = 10;         // Покупка у поставщика (приход)
-    public static final int DEBIT_SALE_RETURN = 11;      // Возврат от клиента (приход)
+    public static final int IN_PURCHASE = 10;         // Покупка у поставщика (приход)
+    public static final int IN_SALE_RETURN = 11;      // Возврат от клиента (приход)
 
-    public static final int CREDIT_SALE = 20;            // Продажа клиенту (расход)
-    public static final int CREDIT_PURCHASE_RETURN = 21; // Возврат поставщику (расход)
-    public static final int CREDIT_WRITE_OFF = 22;       // Списание товара (расход)
+    public static final int OUT_SALE = 20;            // Продажа клиенту (расход)
+    public static final int OUT_PURCHASE_RETURN = 21; // Возврат поставщику (расход)
+    public static final int OUT_WRITE_OFF = 22;       // Списание товара (расход)
 
-    public static final int REGRADE = 30;                // Пересорт товара (приход/расход)
     //-------------------------------------------------------------------------------------
 
 

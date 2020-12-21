@@ -273,12 +273,12 @@ public class SalesOrders {
      * Изменение данных позиции заказа
      * @param entryID позиции заказа
      * @param newProductID новый код товара
-     * @param newquantity новое количество
+     * @param newQuantity новое количество
      * @return обновленная позиция заказа
      */
     @Transactional
-    public SalesOrderItem updateOrderEntry(long entryID, long newProductID, long newquantity) throws HermesException {
-        if (newquantity < 0) return null; // fixme
+    public SalesOrderItem updateOrderEntry(long entryID, long newProductID, long newQuantity) throws HermesException {
+        if (newQuantity < 0) return null; // fixme
         // Если такая позиция не найдена
         SalesOrderItem managedEntry = getOrderEntry(entryID);
         // Если заказ уже изменять нельзя уходим
@@ -295,7 +295,7 @@ public class SalesOrders {
             managedEntry.setProductID(newProductID);
             managedEntry.setPrice(product.getPrice());
         }
-        managedEntry.setquantity(newquantity);
+        managedEntry.setquantity(newQuantity);
         entityManager.persist(managedEntry);
 
         // Обновить временную метку последнего изменения заказа
@@ -324,11 +324,10 @@ public class SalesOrders {
     }
 
     /**
-     * Вычитает исполненное количество позиции заказа (используется в Inventory)
+     * Вычитает исполненное количество позиции заказа если она есть (используется в Inventory)
      * @param orderID заказа
      * @param productID товарной позиции
      * @param fulfilledQuantity исполненное количество
-     * @return обновленная позиция заказа
      */
     @Transactional
     public void subtractFulfilledQuantity(long orderID, long productID, long fulfilledQuantity) throws HermesException {
@@ -380,10 +379,10 @@ public class SalesOrders {
      * @return количество забронированного товара по указанной позиции
      */
     @Transactional
-    public long getCommittedquantity(long productID) {
+    public long getCommittedQuantity(long productID) {
         // Вычисляем Committed Stock (забронированное количество) - это сумма неисполненных
         // позиции с указанным productID подтвержденных, но пока не исполненных заказов
-        String sqlQuery = "SELECT SUM(SalesOrderItem.quantity - SalesOrderItem.fulfilledquantity) " +
+        String sqlQuery = "SELECT SUM(SalesOrderItem.quantity - SalesOrderItem.fulfilledQuantity) " +
                 "FROM SalesOrderItem " +
                 "LEFT JOIN SalesOrder ON SalesOrder.orderID=SalesOrderItem.orderID " +
                 "WHERE SalesOrderItem.productID=" + productID + " " +
