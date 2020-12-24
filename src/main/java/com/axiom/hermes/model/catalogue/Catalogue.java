@@ -62,6 +62,7 @@ public class Catalogue {
      */
     @Transactional
     public Product getProduct(long productID) throws HermesException {
+        Validator.nonNegativeInteger("productID", productID);
         Product product = entityManager.find(Product.class, productID);
         if (product==null) {
             throw new HermesException(
@@ -83,6 +84,11 @@ public class Catalogue {
                     BAD_REQUEST, "Invalid parameter",
                     "ProductID is not zero. Do not specify productID when creating new Product.");
         }
+        Validator.nonNegativeInteger("categoryID", product.getCategoryID());
+        Validator.nonNegativeNumber("price", product.getPrice());
+        Validator.validateName(product.getName());
+        Validator.validateVendorCode(product.getVendorCode());
+
         product.setTimestamp(System.currentTimeMillis());
         entityManager.persist(product);
         inventory.createStockCard(product.productID);
@@ -96,16 +102,22 @@ public class Catalogue {
      */
     @Transactional
     public Product updateProduct(Product product) throws HermesException {
+        Validator.nonNegativeInteger("productID", product.getProductID());
+        Validator.nonNegativeInteger("categoryID", product.getCategoryID());
+        Validator.nonNegativeNumber("price", product.getPrice());
+
         Product managedEntity = getProduct(product.productID);
         if (managedEntity==null) return null;
-        if (product.getPrice() < 0)
-            throw new HermesException(BAD_REQUEST, "Invalid parameter", "price < 0.0");
-        if (product.getCategoryID() < 0)
-            throw new HermesException(BAD_REQUEST, "Invalid parameter", "categoryID < 0");
 
         // Применять только те значения, которые были указаны (чтобы не затереть имеющиеся)
-        if (product.getVendorCode()!=null) managedEntity.setVendorCode(product.getVendorCode());
-        if (product.getName()!=null) managedEntity.setName(product.getName());
+        if (product.getVendorCode()!=null) {
+            Validator.validateVendorCode(product.getVendorCode());
+            managedEntity.setVendorCode(product.getVendorCode());
+        }
+        if (product.getName()!=null) {
+            Validator.validateName(product.getName());
+            managedEntity.setName(product.getName());
+        }
         if (product.getDescription()!=null) managedEntity.setDescription(product.getDescription());
         if (product.getUnitOfMeasure()!=null) managedEntity.setUnitOfMeasure(product.getUnitOfMeasure());
 
@@ -126,6 +138,8 @@ public class Catalogue {
      */
     @Transactional
     public void removeProduct(long productID) throws HermesException {
+        Validator.nonNegativeInteger("productID", productID);
+
         Product product = getProduct(productID);
 
         // Если хоть где-то используется в заказах или транзакциях нельзя удалять
@@ -154,6 +168,8 @@ public class Catalogue {
      */
     @Transactional
     public void uploadImage(ProductImage productImage) throws HermesException {
+        Validator.nonNegativeInteger("productID", productImage.getProductID());
+
         // Проверяем есть ли такая товарная позиция в каталоге
         Product product = getProduct(productImage.productID);
         ProductImage managedEntity = entityManager.find(ProductImage.class, product.productID);
@@ -177,6 +193,7 @@ public class Catalogue {
      */
     @Transactional
     public byte[] getProductThumbnail(long productID) throws HermesException {
+        Validator.nonNegativeInteger("productID", productID);
         try {
             String query = "SELECT a.thumbnail FROM ProductImage a WHERE a.productID=" + productID;
             return entityManager.createQuery(query, byte[].class).getSingleResult();
@@ -189,6 +206,7 @@ public class Catalogue {
 
     @Transactional
     public ProductImage getProductImage(long productID) throws HermesException {
+        Validator.nonNegativeInteger("productID", productID);
         try {
             String query = "SELECT a FROM ProductImage a WHERE a.productID=" + productID;
             return entityManager.createQuery(query, ProductImage.class).getSingleResult();

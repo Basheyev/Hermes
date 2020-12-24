@@ -29,7 +29,7 @@ public class StockTransaction {
     public static final int OUT_WRITE_OFF = 22;       // Списание товара (расход)
 
     //-------------------------------------------------------------------------------------
-
+    // todo добавить поле суммы = quantity * price (+индекс side, sum)
 
     @Id
     @GeneratedValue
@@ -38,7 +38,7 @@ public class StockTransaction {
     public long productID;           // код товара
     public int side;                 // дебет/кредит (приход/расход)
     public int operationCode;        // код операции
-    public long quantity;              // количество товара
+    public long quantity;            // количество товара
     public double price;             // цена товара
     public long orderID;             // код заказа как основание (покупки/продажи - зависит от поля side)
     public long userID;              // код пользователя внесшего запись

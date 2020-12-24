@@ -1,6 +1,7 @@
 package com.axiom.hermes.model.customers;
 
 import com.axiom.hermes.common.exceptions.HermesException;
+import com.axiom.hermes.common.validation.Validator;
 import com.axiom.hermes.model.customers.entities.Customer;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -41,6 +42,8 @@ public class Customers {
      */
     @Transactional
     public Customer getCustomer(long customerID) throws HermesException{
+        Validator.nonNegativeInteger("customerID", customerID);
+
         Customer customer = entityManager.find(Customer.class, customerID);
         if (customer==null) {
             throw new HermesException(
@@ -57,7 +60,7 @@ public class Customers {
      */
     @Transactional
     public Customer getCustomerByMobile(String mobile) throws HermesException {
-        if (mobile==null) throw new HermesException(BAD_REQUEST, "Invalid parameter", "Mobile can not be null.");
+        mobile = Validator.validateMobile(mobile);
         try {
             String query = "SELECT a FROM Customer a WHERE a.mobile='" + mobile + "'";
             return entityManager.createQuery(query, Customer.class).getSingleResult();
@@ -77,8 +80,8 @@ public class Customers {
     @Transactional
     public Customer addCustomer(Customer customer) throws HermesException {
         String mobile = customer.getMobile();
-        if (mobile==null || mobile.equals(""))
-            throw new HermesException(BAD_REQUEST, "Invalid parameter", "Mobile can not be null.");
+        mobile = Validator.validateMobile(mobile);
+        customer.setMobile(mobile);
         try {
             // Ищем клиента с таким же мобильным номером
             getCustomerByMobile(customer.getMobile());
@@ -102,12 +105,20 @@ public class Customers {
     @Transactional
     public Customer updateCustomer(Customer customer) throws HermesException {
         Customer managed = getCustomer(customer.getCustomerID());
-        if (customer.getMobile()!=null) managed.setMobile(customer.getMobile());
-        if (customer.getBusinessID()!=null) managed.setBusinessID(customer.getBusinessID());
+        if (customer.getMobile()!=null) {
+            String mobile = customer.getMobile();
+            mobile = Validator.validateMobile(mobile);
+            managed.setMobile(mobile);
+        }
+        if (customer.getBusinessID()!=null) {
+            Validator.validateBusinessID(customer.getBusinessID());
+            managed.setBusinessID(customer.getBusinessID());
+        }
         if (customer.getName()!=null) managed.setName(customer.getName());
         if (customer.getAddress()!=null) managed.setAddress(customer.getAddress());
         if (customer.getCity()!=null) managed.setCity(customer.getCity());
         if (customer.getCountry()!=null) managed.setCountry(customer.getCountry());
+        // todo поле verified выставляет дистрибьютор (надо сменить тип и вынести отдельно)
         managed.setVerified(customer.isVerified());
         entityManager.persist(managed);
         return customer;
@@ -120,6 +131,7 @@ public class Customers {
      */
     @Transactional
     public void removeCustomer(long customerID) throws HermesException {
+        Validator.nonNegativeInteger("customerID", customerID);
         // Ищем такого клиента
         Customer customer = getCustomer(customerID);
         // Если у клиента есть хотя бы один заказ - удалять нельзя

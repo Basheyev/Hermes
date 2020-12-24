@@ -28,14 +28,15 @@ public class SalesOrdersService {
     @GET
     public Response getAllOrders(@QueryParam("startTime") long startTime,
                                  @QueryParam("endTime") long endTime,
-                                 @QueryParam("status") int status) {
+                                 @QueryParam("status") int status) throws HermesException {
         List<SalesOrder> orders = salesOrders.getAllOrders(startTime, endTime, status);
         return Response.ok(orders).build();
     }
 
     @GET
     @Path("/getOrders")
-    public Response getOrders(@QueryParam("customerID") long customerID, @QueryParam("status") int status) {
+    public Response getOrders(@QueryParam("customerID") long customerID, @QueryParam("status") int status)
+    throws HermesException{
         List<SalesOrder> orders = salesOrders.getOrders(customerID, status);
         return Response.ok(orders).build();
     }
@@ -73,7 +74,7 @@ public class SalesOrdersService {
 
     @GET
     @Path("/getOrderEntries")
-    public Response getOrderEntries(@QueryParam("orderID") long orderID) {
+    public Response getOrderEntries(@QueryParam("orderID") long orderID) throws HermesException {
         List<SalesOrderItem> entries = salesOrders.getOrderEntries(orderID);
         return Response.ok(entries).build();
     }

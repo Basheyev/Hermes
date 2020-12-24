@@ -39,7 +39,11 @@ public class SalesOrders {
      * @return список заказов клиентов
      */
     @Transactional
-    public List<SalesOrder> getAllOrders(long startTime, long endTime, int status) {
+    public List<SalesOrder> getAllOrders(long startTime, long endTime, int status) throws HermesException {
+        Validator.nonNegativeInteger("startTime", startTime);
+        Validator.nonNegativeInteger("endTime", startTime);
+        Validator.nonNegativeInteger("status", startTime);
+
         List<SalesOrder> customerOrders;
         String query = "SELECT a FROM SalesOrder a";
         if (startTime > 0 || endTime > 0 || status > 0) {
@@ -64,7 +68,10 @@ public class SalesOrders {
      * @return список заказов клиента с указанным статусом
      */
     @Transactional
-    public List<SalesOrder> getOrders(long customerID, int status) {
+    public List<SalesOrder> getOrders(long customerID, int status) throws HermesException {
+        Validator.nonNegativeInteger("customerID", customerID);
+        Validator.nonNegativeInteger("status", status);
+
         List<SalesOrder> customerOrders;
         String query;
         if (status==0) {
@@ -84,12 +91,13 @@ public class SalesOrders {
      */
     @Transactional
     public SalesOrder addOrder(long customerID) throws HermesException {
-        if (customerID < 0) return null;  // fixme
+        Validator.nonNegativeInteger("customerID", customerID);
         Customer customer = customers.getCustomer(customerID);
         SalesOrder salesOrder = new SalesOrder(customer.getCustomerID());
         entityManager.persist(salesOrder);
         return salesOrder;
     }
+
 
     /**
      * Получить заказа по ID
@@ -98,8 +106,7 @@ public class SalesOrders {
      */
     @Transactional
     public SalesOrder getOrder(long orderID) throws HermesException {
-        // fixme
-        if (orderID<0) throw new HermesException(BAD_REQUEST, "Invalid parameter", "OrderID is less than zero");
+        Validator.nonNegativeInteger("orderID", orderID);
         SalesOrder salesOrder = entityManager.find(SalesOrder.class, orderID);
         if (salesOrder==null) {
             throw new HermesException(NOT_FOUND, "Sales order not found",
@@ -107,6 +114,7 @@ public class SalesOrders {
         }
         return salesOrder;
     }
+
 
     /**
      * Изменить статус заказа
@@ -116,6 +124,8 @@ public class SalesOrders {
      */
     @Transactional
     public SalesOrder changeStatus(long orderID, int status) throws HermesException {
+        Validator.nonNegativeInteger("orderID", orderID);
+        Validator.nonNegativeInteger("status", status);
         SalesOrder salesOrder = entityManager.find(SalesOrder.class, orderID, LockModeType.PESSIMISTIC_WRITE);
         if (salesOrder==null)
             throw new HermesException(NOT_FOUND, "Sales order not found",
@@ -140,6 +150,7 @@ public class SalesOrders {
      */
     @Transactional
     public void removeOrder(long orderID) throws HermesException {
+        Validator.nonNegativeInteger("orderID", orderID);
         SalesOrder salesOrder = entityManager.find(SalesOrder.class, orderID, LockModeType.PESSIMISTIC_WRITE);
         if (salesOrder==null) {
             throw new HermesException(NOT_FOUND, "Sales order not found",
@@ -162,7 +173,8 @@ public class SalesOrders {
      * @return список позиций заказа
      */
     @Transactional
-    public List<SalesOrderItem> getOrderEntries(long orderID) {
+    public List<SalesOrderItem> getOrderEntries(long orderID) throws HermesException {
+        Validator.nonNegativeInteger("orderID", orderID);
         List<SalesOrderItem> orderEntries;
         String query = "SELECT a FROM SalesOrderItem a WHERE a.orderID=" + orderID;
         orderEntries = entityManager.createQuery(query, SalesOrderItem.class).getResultList();
@@ -176,11 +188,7 @@ public class SalesOrders {
      */
     @Transactional
     public SalesOrderItem getOrderEntry(long entryID) throws HermesException {
-
-        if (entryID<0) {  // fixme
-            throw new HermesException(BAD_REQUEST, "Invalid parameter", "entryID can not be less than 0.");
-        }
-
+        Validator.nonNegativeInteger("entryID", entryID);
         SalesOrderItem entry = entityManager.find(SalesOrderItem.class, entryID);
 
         if (entry==null) {
@@ -199,7 +207,8 @@ public class SalesOrders {
      */
     @Transactional
     public SalesOrderItem getOrderEntry(long orderID, long productID) throws HermesException {
-        if (orderID<0 || productID<0) return null;  // fixme
+        Validator.nonNegativeInteger("orderID", orderID);
+        Validator.nonNegativeInteger("productID", productID);
         SalesOrderItem entry;
         String query =
                 "SELECT a FROM SalesOrderItem a " +
@@ -224,7 +233,10 @@ public class SalesOrders {
      */
     @Transactional
     public SalesOrderItem addOrderEntry(long orderID, long productID, long quantity) throws HermesException {
-        if (orderID < 0 || productID < 0 || quantity < 0) return null;  // fixme
+        Validator.nonNegativeInteger("orderID", orderID);
+        Validator.nonNegativeInteger("productID", productID);
+        Validator.nonNegativeInteger("quantity", quantity);
+
         SalesOrder salesOrder = getOrder(orderID);
 
         // Если заказ уже изменять нельзя уходим
@@ -272,13 +284,16 @@ public class SalesOrders {
     /**
      * Изменение данных позиции заказа
      * @param entryID позиции заказа
-     * @param newProductID новый код товара
-     * @param newQuantity новое количество
+     * @param productID новый код товара
+     * @param quantity новое количество
      * @return обновленная позиция заказа
      */
     @Transactional
-    public SalesOrderItem updateOrderEntry(long entryID, long newProductID, long newQuantity) throws HermesException {
-        if (newQuantity < 0) return null; // fixme
+    public SalesOrderItem updateOrderEntry(long entryID, long productID, long quantity) throws HermesException {
+        Validator.nonNegativeInteger("entryID", entryID);
+        Validator.nonNegativeInteger("productID", productID);
+        Validator.nonNegativeInteger("quantity", quantity);
+
         // Если такая позиция не найдена
         SalesOrderItem managedEntry = getOrderEntry(entryID);
         // Если заказ уже изменять нельзя уходим
@@ -289,13 +304,13 @@ public class SalesOrders {
                             salesOrder.getStatus() + " and its not changeable.");
 
         // Если изменился код товара
-        if (managedEntry.getProductID() != newProductID) {
-            Product product = catalogue.getProduct(newProductID);
+        if (managedEntry.getProductID() != productID) {
+            Product product = catalogue.getProduct(productID);
             if (product==null || !product.isAvailable()) return null;
-            managedEntry.setProductID(newProductID);
+            managedEntry.setProductID(productID);
             managedEntry.setPrice(product.getPrice());
         }
-        managedEntry.setquantity(newQuantity);
+        managedEntry.setquantity(quantity);
         entityManager.persist(managedEntry);
 
         // Обновить временную метку последнего изменения заказа
@@ -314,7 +329,9 @@ public class SalesOrders {
      */
     @Transactional
     public SalesOrderItem addFulfilledQuantity(long orderID, long productID, long fulfilledQuantity) throws HermesException {
-        if (fulfilledQuantity <= 0) return null;
+        Validator.nonNegativeInteger("orderID", orderID);
+        Validator.nonNegativeInteger("productID", productID);
+        Validator.nonNegativeInteger("fulfilledQuantity", fulfilledQuantity);
         // Ищем позицию заказа и специально не обрабатываем исключение для передачи дальше
         SalesOrderItem salesOrderItem = getOrderEntry(orderID, productID);
         long newFulfilledQuantity = salesOrderItem.getFulfilledQuantity() + fulfilledQuantity;
@@ -331,7 +348,9 @@ public class SalesOrders {
      */
     @Transactional
     public void subtractFulfilledQuantity(long orderID, long productID, long fulfilledQuantity) throws HermesException {
-        if (fulfilledQuantity <= 0) return;
+        Validator.nonNegativeInteger("orderID", orderID);
+        Validator.nonNegativeInteger("productID", productID);
+        Validator.nonNegativeInteger("fulfilledQuantity", fulfilledQuantity);
         SalesOrderItem salesOrderItem;
         // Ищем позицию заказа если она есть
         try {
@@ -356,6 +375,7 @@ public class SalesOrders {
      */
     @Transactional
     public boolean removeOrderEntry(long entryID) throws HermesException {
+        Validator.nonNegativeInteger("entryID", entryID);
         SalesOrderItem managedEntry = getOrderEntry(entryID);
         // Если заказ уже изменять нельзя уходим
         SalesOrder salesOrder = getOrder(managedEntry.getOrderID());
@@ -379,7 +399,8 @@ public class SalesOrders {
      * @return количество забронированного товара по указанной позиции
      */
     @Transactional
-    public long getCommittedQuantity(long productID) {
+    public long getCommittedQuantity(long productID) throws HermesException {
+        Validator.nonNegativeInteger("productID", productID);
         // Вычисляем Committed Stock (забронированное количество) - это сумма неисполненных
         // позиции с указанным productID подтвержденных, но пока не исполненных заказов
         String sqlQuery = "SELECT SUM(SalesOrderItem.quantity - SalesOrderItem.fulfilledQuantity) " +

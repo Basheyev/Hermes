@@ -105,9 +105,8 @@ public class InventoryService {
      */
     @GET
     @Path("/getOrderTransactions")
-    public Response getOrderTransactions(@QueryParam("orderID") long orderID) {
+    public Response getOrderTransactions(@QueryParam("orderID") long orderID) throws HermesException  {
         List<StockTransaction> orderTransactions = inventory.getOrderTransactions(orderID);
-        if (orderTransactions==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(orderTransactions).build();
     }
 
@@ -123,10 +122,9 @@ public class InventoryService {
     public Response getProductTransactions(
             @QueryParam("productID") long productID,
             @QueryParam("startTime") long startTime,
-            @QueryParam("endTime") long endTime) {
+            @QueryParam("endTime") long endTime) throws HermesException {
         List<StockTransaction> productTransactions;
         productTransactions = inventory.getProductTransactions(productID, startTime, endTime);
-        if (productTransactions==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(productTransactions).build();
     }
 

@@ -2,6 +2,7 @@ package com.axiom.hermes.model.inventory;
 
 
 import com.axiom.hermes.common.exceptions.HermesException;
+import com.axiom.hermes.common.validation.Validator;
 import com.axiom.hermes.model.catalogue.Catalogue;
 import com.axiom.hermes.model.catalogue.entities.Product;
 import com.axiom.hermes.model.customers.SalesOrders;
@@ -104,7 +105,8 @@ public class Inventory {
      * @param orderID заказа
      * @return список складских транзакций по указанному заказу
      */
-    public List<StockTransaction> getOrderTransactions(long orderID) {
+    public List<StockTransaction> getOrderTransactions(long orderID) throws HermesException {
+        Validator.nonNegativeInteger("orderID", orderID);
         List<StockTransaction> orderTransactions;
         String query = "SELECT a FROM StockTransaction a WHERE a.orderID=" + orderID;
         orderTransactions = entityManager.createQuery(query, StockTransaction.class).getResultList();
@@ -118,7 +120,13 @@ public class Inventory {
      * @param endTime по какое время
      * @return список складских транзакций по указнной товарной позиции в указанный период
      */
-    public List<StockTransaction> getProductTransactions(long productID, long startTime, long endTime) {
+    public List<StockTransaction> getProductTransactions(long productID, long startTime, long endTime)
+        throws HermesException {
+        // Проверяем валидность параметров
+        Validator.nonNegativeInteger("productID", productID);
+        Validator.nonNegativeInteger("startTime", startTime);
+        Validator.nonNegativeInteger("endTime", endTime);
+
         List<StockTransaction> productTransactions;
         String query = "SELECT a FROM StockTransaction a WHERE a.productID=" + productID;
         if (startTime>0 || endTime > 0) {
@@ -129,8 +137,29 @@ public class Inventory {
     }
 
     //-----------------------------------------------------------------------------------------------------
-    // Работа со складскими карточками (fixme записывать состояния отдельными записями - для отчетов и скорости)
+    // Работа со складскими карточками
     //-----------------------------------------------------------------------------------------------------
+
+
+    /**
+     * Создать складскую карточку под товарную позицию
+     * @param productID код товарной позиции
+     * @return складская карточка
+     */
+    @Transactional
+    public StockCard createStockCard(long productID) throws HermesException {
+        // Проверяем валидность параметров
+        Validator.nonNegativeInteger("productID", productID);
+
+        // Если такая товарная позиция есть в каталоге
+        Product product = catalogue.getProduct(productID);
+        // Создаём складскую карточку
+        StockCard stockInfo = new StockCard(product.getProductID());
+        // Сохраняем складскую карточку
+        entityManager.persist(stockInfo);
+        return stockInfo;
+    }
+
 
     /**
      * Возвращает информацию по всем складским карточкам
@@ -146,36 +175,18 @@ public class Inventory {
 
 
     /**
-     * Создать складскую карточку под товарную позицию
-     * @param productID код товарной позиции
-     * @return складская карточка
-     */
-    @Transactional
-    public StockCard createStockCard(long productID) throws HermesException {
-        // Если такая товарная позиция есть в каталоге
-        Product product = catalogue.getProduct(productID);
-        // Создаём складскую карточку
-        StockCard stockInfo = new StockCard(productID);
-        // Сохраняем складскую карточку
-        entityManager.persist(stockInfo);
-        return stockInfo;
-    }
-
-
-    /**
      * Получить складскую карточку по коду товарной позиции и вычисляет забронированный обьем
      * @param productID код товарной позиции
      * @return складская карточка
      */
     @Transactional
     public StockCard getStockCard(long productID) throws HermesException {
+        // Проверяем валидность параметров
+        Validator.nonNegativeInteger("productID", productID);
+
         StockCard stockInfo = entityManager.find(StockCard.class, productID);
         // Если складской карточки нет, то создаём её если такая товарная позиция есть
-        if (stockInfo==null) {
-            Product product = catalogue.getProduct(productID);
-            stockInfo = createStockCard(product.getProductID());
-            return stockInfo;
-        }
+        if (stockInfo==null) stockInfo = createStockCard(productID);
         return stockInfo;
     }
 
@@ -186,6 +197,9 @@ public class Inventory {
      */
     @Transactional
     public StockCard updateCommittedStock(long productID) throws HermesException {
+        // Проверяем валидность параметров
+        Validator.nonNegativeInteger("productID", productID);
+
         // Поднимаем складскую карточку товара
         StockCard stockInfo = entityManager.find(
                 StockCard.class, productID,
@@ -223,11 +237,26 @@ public class Inventory {
     //-----------------------------------------------------------------------------------------------------
     // Базовые операции в журнале складского учёта - тут основная бизнес логика и производительность
     //-----------------------------------------------------------------------------------------------------
+
+    /**
+     * Проведение в складском журнале транзакции прихода товара
+     * @param opCode код операции
+     * @param orderID заказ
+     * @param productID продукт
+     * @param quantity количество
+     * @param price цена
+     * @return сохраненная складская транзакция
+     * @throws HermesException
+     */
     @Transactional
     private StockTransaction incomingStock(int opCode, long orderID, long productID, long quantity, double price)
             throws HermesException {
         // Проверяем валидность параметров
-        if (orderID < 0 || productID < 0 || quantity <= 0 || price < 0) return null;
+        Validator.nonNegativeInteger("orderID", orderID);
+        Validator.nonNegativeInteger("productID", productID);
+        Validator.nonNegativeInteger("quantity", quantity);
+        Validator.nonNegativeNumber("price", price);
+
         // Обновляем данные позиции заказа если операция возврата товара
         if (opCode== IN_SALE_RETURN) {
             // Уменьшаем количество отгруженного товара по позиции заказа
@@ -240,12 +269,24 @@ public class Inventory {
         return transaction;
     }
 
-
+    /**
+     * Проведение в складском журнале транзакции расхода товара
+     * @param opCode код операции
+     * @param orderID заказ
+     * @param productID продукт
+     * @param quantity количество
+     * @param price цена
+     * @return сохраненная складская транзакция
+     * @throws HermesException
+     */
     @Transactional
     private StockTransaction outgoingStock(int opCode, long orderID, long productID, long quantity, double price)
             throws HermesException{
         // Проверяем валидность параметров
-        if (orderID < 0 || productID < 0 || quantity <= 0 || price < 0) return null;
+        Validator.nonNegativeInteger("orderID", orderID);
+        Validator.nonNegativeInteger("productID", productID);
+        Validator.nonNegativeInteger("quantity", quantity);
+        Validator.nonNegativeNumber("price", price);
 
         boolean useCommittedStock = false;
         // Если это операции Продажи
@@ -275,6 +316,17 @@ public class Inventory {
     }
 
 
+    /**
+     * Обновление данных складской карточки
+     * @param side приход/расход (SIDE_IN / SIDE_OUT)
+     * @param opCode код операции
+     * @param useComittedStock true расходовать с забронированных остатков
+     * @param productID продукт
+     * @param quantity количество
+     * @param timestamp временна метка транзакции складского журнала
+     * @return обновленная складская карточка
+     * @throws HermesException
+     */
     @Transactional
     private StockCard updateStockBalance(int side,
                                          int opCode,
@@ -282,8 +334,11 @@ public class Inventory {
                                          long productID,
                                          long quantity,
                                          long timestamp) throws HermesException{
+        // Проверяем валидность параметров
+        Validator.nonNegativeInteger("productID", productID);
+        Validator.nonNegativeInteger("quantity", quantity);
 
-        // Поднимаем складскую карточку товара и блокируем на запись/чтение пока не закончим
+        // Поднимаем складскую карточку товара и блокируем на запись/чтение пока не закончим обновление
         StockCard stockInfo = entityManager.find(StockCard.class, productID, LockModeType.PESSIMISTIC_WRITE);
 
         // Если складской карточки нет
@@ -324,6 +379,8 @@ public class Inventory {
             stockOnHand += quantity;
             availableForSale = stockOnHand - committedStock;
         }
+
+        // TODO здесь можно будет обновлять таблицу StockBalance для сохранения истории складской карточки
 
         // Обновляем информацию в складской карточке
         stockInfo.setStockOnHand(stockOnHand);

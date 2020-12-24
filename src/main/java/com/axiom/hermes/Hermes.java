@@ -3,7 +3,7 @@ package com.axiom.hermes;
 import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.annotations.QuarkusMain;
 
-// todo Добавить информационные сообщения об ошибках
+// todo Добавить защиту от SQL инъекций
 
 // Examples: https://github.com/shopizer-ecommerce
 /**
