@@ -262,10 +262,16 @@ public class Inventory {
             // Уменьшаем количество отгруженного товара по позиции заказа
             salesOrders.subtractFulfilledQuantity(orderID, productID, quantity);
         }
-        // Проводим складскую транзакцию в журнале складских транзакций
+
+        // Формируем складскую транзакцию
         StockTransaction transaction = new StockTransaction(orderID, productID, SIDE_IN, opCode, quantity, price);
-        entityManager.persist(transaction);
+
+        // Обновляем складскую карточку
         updateStockBalance(SIDE_IN, opCode,false, productID, quantity, transaction.getTimestamp());
+
+        // Проводим складскую транзакцию в журнале складских транзакций
+        entityManager.persist(transaction);
+
         return transaction;
     }
 
