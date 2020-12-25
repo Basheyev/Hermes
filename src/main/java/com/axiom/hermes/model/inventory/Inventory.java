@@ -309,6 +309,8 @@ public class Inventory {
         StockTransaction transaction = new StockTransaction(orderID, productID, SIDE_OUT, opCode, quantity, price);
         entityManager.persist(transaction);
 
+        // fixme транзакция проводится до проверки остатков
+
         // Обновляем складскую карточку
         updateStockBalance(SIDE_OUT, opCode, useCommittedStock, productID, quantity, transaction.getTimestamp());
 
