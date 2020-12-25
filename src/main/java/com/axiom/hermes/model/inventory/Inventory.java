@@ -305,14 +305,14 @@ public class Inventory {
             }
         }
 
-        // Проводим складскую транзакцию в журнале складских транзакций
+        // Формируем новую транзакцию
         StockTransaction transaction = new StockTransaction(orderID, productID, SIDE_OUT, opCode, quantity, price);
-        entityManager.persist(transaction);
-
-        // fixme транзакция проводится до проверки остатков
 
         // Обновляем складскую карточку
         updateStockBalance(SIDE_OUT, opCode, useCommittedStock, productID, quantity, transaction.getTimestamp());
+
+        // Проводим складскую транзакцию в журнале складских транзакций
+        entityManager.persist(transaction);
 
         return transaction;
     }
