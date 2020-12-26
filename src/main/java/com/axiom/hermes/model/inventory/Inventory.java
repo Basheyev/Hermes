@@ -17,6 +17,8 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
+import javax.transaction.SystemException;
+import javax.transaction.TransactionManager;
 import javax.transaction.Transactional;
 import java.util.List;
 
@@ -27,6 +29,7 @@ import java.util.List;
 public class Inventory {
 
     @Inject EntityManager entityManager;
+    @Inject TransactionManager transactionManager;
 
     @Inject Catalogue catalogue;
     @Inject SalesOrders salesOrders;
@@ -260,18 +263,30 @@ public class Inventory {
         // Обновляем данные позиции заказа если операция возврата товара
         if (opCode== IN_SALE_RETURN) {
             // Уменьшаем количество отгруженного товара по позиции заказа
-            salesOrders.subtractFulfilledQuantity(orderID, productID, quantity);
+            try {
+                salesOrders.subtractFulfilledQuantity(orderID, productID, quantity);
+            }
+            catch(HermesException e) {
+                // если не нашли заказ из которого вычесть - ничего страшного
+            }
         }
 
-        // Формируем складскую транзакцию
-        StockTransaction transaction = new StockTransaction(orderID, productID, SIDE_IN, opCode, quantity, price);
-
-        // Обновляем складскую карточку
-        updateStockBalance(SIDE_IN, opCode,false, productID, quantity, transaction.getTimestamp());
-
-        // Проводим складскую транзакцию в журнале складских транзакций
-        entityManager.persist(transaction);
-
+        StockTransaction transaction;
+        try {
+            // Формируем складскую транзакцию
+            transaction = new StockTransaction(orderID, productID, SIDE_IN, opCode, quantity, price);
+            // Проводим складскую транзакцию в журнале складских транзакций
+            entityManager.persist(transaction);
+            // Обновляем складскую карточку
+            updateStockBalance(SIDE_IN, opCode, false, productID, quantity, transaction.getTimestamp());
+        } catch (HermesException exception) {
+            try {
+                transactionManager.rollback();
+            } catch (RuntimeException | SystemException e) {
+                // todo как-то сообщить что пошло что-то не так
+            }
+            throw exception;
+        }
         return transaction;
     }
 
@@ -287,7 +302,7 @@ public class Inventory {
      */
     @Transactional
     private StockTransaction outgoingStock(int opCode, long orderID, long productID, long quantity, double price)
-            throws HermesException{
+            throws HermesException {
         // Проверяем валидность параметров
         Validator.nonNegativeInteger("orderID", orderID);
         Validator.nonNegativeInteger("productID", productID);
@@ -311,15 +326,23 @@ public class Inventory {
             }
         }
 
-        // Формируем новую транзакцию
-        StockTransaction transaction = new StockTransaction(orderID, productID, SIDE_OUT, opCode, quantity, price);
+        StockTransaction transaction;
 
-        // Обновляем складскую карточку
-        updateStockBalance(SIDE_OUT, opCode, useCommittedStock, productID, quantity, transaction.getTimestamp());
-
-        // Проводим складскую транзакцию в журнале складских транзакций
-        entityManager.persist(transaction);
-
+        try {
+            // Формируем новую транзакцию
+            transaction = new StockTransaction(orderID, productID, SIDE_OUT, opCode, quantity, price);
+            // Проводим складскую транзакцию в журнале складских транзакций
+            entityManager.persist(transaction);
+            // Обновляем складскую карточку
+            updateStockBalance(SIDE_OUT, opCode, useCommittedStock, productID, quantity, transaction.getTimestamp());
+        } catch (HermesException exception) {
+            try {
+                transactionManager.setRollbackOnly();
+            } catch (RuntimeException | SystemException e) {
+                // todo как-то сообщить что пошло что-то не так
+            }
+            throw exception;
+        }
         return transaction;
     }
 

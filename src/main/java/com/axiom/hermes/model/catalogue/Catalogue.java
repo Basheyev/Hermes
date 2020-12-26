@@ -1,11 +1,10 @@
 package com.axiom.hermes.model.catalogue;
 
-import static com.axiom.hermes.common.exceptions.HermesException.*;
 import com.axiom.hermes.common.exceptions.HermesException;
+import com.axiom.hermes.common.validation.Validator;
 import com.axiom.hermes.model.catalogue.entities.Product;
 import com.axiom.hermes.model.catalogue.entities.ProductImage;
 import com.axiom.hermes.model.inventory.Inventory;
-import com.axiom.hermes.common.validation.Validator;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -13,6 +12,8 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.transaction.Transactional;
 import java.util.List;
+
+import static com.axiom.hermes.common.exceptions.HermesException.*;
 
 // TODO Добавить управление категориями
 
@@ -134,7 +135,6 @@ public class Catalogue {
     /**
      * Удаляет товарную позицию если с ней не связано заказов и транзакций
      * @param productID товарной позиции
-     * @return true если удалена, false если не удалена (нет такого продукта или товарная позиция используется)
      */
     @Transactional
     public void removeProduct(long productID) throws HermesException {
@@ -164,7 +164,6 @@ public class Catalogue {
     /**
      * Загружает изображение товарной позиции
      * @param productImage изображение товарной позиции
-     * @return true - значит успешно, false - если нет
      */
     @Transactional
     public void uploadImage(ProductImage productImage) throws HermesException {
@@ -218,16 +217,5 @@ public class Catalogue {
     }
 
 
-/*
-    @Transactional
-    public void generateProducts() throws HermesException {
-        addProduct(new Product("JNLV0", "Jeans", "LEVI", 20));
-        addProduct(new Product("SHMX1", "Shirt", "MAXMARA", 10));
-        addProduct(new Product("HTAY2", "Hat", "Ayoka", 15));
-        addProduct(new Product("DRGC3","Dress", "GUCCI", 20));
-        addProduct(new Product("GLSP4", "Glasses", "SAPA", 10));
-        addProduct(new Product("SHAY5","Shoes", "Ayoka", 15));
-    }
-*/
 
 }
