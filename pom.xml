@@ -76,13 +76,6 @@
       <version>0.4.13</version>
     </dependency>
 
-    <dependency>
-      <groupId>org.graalvm.sdk</groupId>
-      <artifactId>graal-sdk</artifactId>
-      <version>20.2.0</version>
-      <scope>provided</scope>
-    </dependency>
-
   </dependencies>
 
   <build>

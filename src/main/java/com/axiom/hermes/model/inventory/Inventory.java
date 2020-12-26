@@ -265,13 +265,12 @@ public class Inventory {
             // Уменьшаем количество отгруженного товара по позиции заказа
             try {
                 salesOrders.subtractFulfilledQuantity(orderID, productID, quantity);
-            }
-            catch(HermesException e) {
+            } catch(HermesException e) {
                 // если не нашли заказ из которого вычесть - ничего страшного
             }
         }
 
-        StockTransaction transaction;
+        StockTransaction transaction = null;
         try {
             // Формируем складскую транзакцию
             transaction = new StockTransaction(orderID, productID, SIDE_IN, opCode, quantity, price);
@@ -281,8 +280,8 @@ public class Inventory {
             updateStockBalance(SIDE_IN, opCode, false, productID, quantity, transaction.getTimestamp());
         } catch (HermesException exception) {
             try {
-                transactionManager.rollback();
-            } catch (RuntimeException | SystemException e) {
+                transactionManager.setRollbackOnly();
+            } catch (IllegalStateException | SystemException e) {
                 // todo как-то сообщить что пошло что-то не так
             }
             throw exception;
@@ -326,7 +325,7 @@ public class Inventory {
             }
         }
 
-        StockTransaction transaction;
+        StockTransaction transaction = null;
 
         try {
             // Формируем новую транзакцию
@@ -338,7 +337,7 @@ public class Inventory {
         } catch (HermesException exception) {
             try {
                 transactionManager.setRollbackOnly();
-            } catch (RuntimeException | SystemException e) {
+            } catch (IllegalStateException | SystemException e) {
                 // todo как-то сообщить что пошло что-то не так
             }
             throw exception;

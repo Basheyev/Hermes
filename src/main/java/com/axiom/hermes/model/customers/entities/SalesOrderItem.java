@@ -56,7 +56,7 @@ public class SalesOrderItem {
         return quantity;
     }
 
-    public void setquantity(long quantity) {
+    public void setQuantity(long quantity) {
         this.quantity = quantity;
     }
 

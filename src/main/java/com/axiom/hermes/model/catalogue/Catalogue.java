@@ -10,6 +10,8 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
+import javax.transaction.SystemException;
+import javax.transaction.TransactionManager;
 import javax.transaction.Transactional;
 import java.util.List;
 
@@ -23,11 +25,10 @@ import static com.axiom.hermes.common.exceptions.HermesException.*;
 @ApplicationScoped
 public class Catalogue {
 
-    @Inject
-    EntityManager entityManager;
+    @Inject EntityManager entityManager;
+    @Inject TransactionManager transactionManager;
 
-    @Inject
-    Inventory inventory;
+    @Inject Inventory inventory;
 
     public Catalogue() { }
 
@@ -91,8 +92,17 @@ public class Catalogue {
         Validator.validateVendorCode(product.getVendorCode());
 
         product.setTimestamp(System.currentTimeMillis());
-        entityManager.persist(product);
-        inventory.createStockCard(product.productID);
+        try {
+            entityManager.persist(product);
+            inventory.createStockCard(product.productID);
+        } catch (Exception exception) {
+            try {
+                transactionManager.setRollbackOnly();
+            } catch (IllegalStateException | SystemException e) {
+                // todo как-то сообщаться, о том, что что-произошло
+            }
+            throw exception;
+        }
         return product;
     }
 
@@ -156,9 +166,18 @@ public class Catalogue {
         }
 
         // Если нигде не используется тогда удаляем связанные данные: изображения и складские карточки
-        entityManager.createQuery("DELETE FROM ProductImage a WHERE a.productID=" + productID).executeUpdate();
-        entityManager.createQuery("DELETE FROM StockCard a WHERE a.productID=" + productID).executeUpdate();
-        entityManager.remove(product);
+        try {
+            entityManager.createQuery("DELETE FROM ProductImage a WHERE a.productID=" + productID).executeUpdate();
+            entityManager.createQuery("DELETE FROM StockCard a WHERE a.productID=" + productID).executeUpdate();
+            entityManager.remove(product);
+        } catch (Exception exception) {
+            try {
+                transactionManager.setRollbackOnly();
+            } catch (IllegalStateException | SystemException e) {
+                // todo как-то сообщаться, о том, что что-произошло
+            }
+            throw exception;
+        }
     }
 
     /**

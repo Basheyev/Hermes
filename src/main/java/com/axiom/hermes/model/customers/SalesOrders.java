@@ -15,6 +15,8 @@ import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceException;
+import javax.transaction.SystemException;
+import javax.transaction.TransactionManager;
 import javax.transaction.Transactional;
 import java.util.List;
 
@@ -27,6 +29,7 @@ import static com.axiom.hermes.common.exceptions.HermesException.*;
 public class SalesOrders {
 
     @Inject EntityManager entityManager;
+    @Inject TransactionManager transactionManager;
 
     @Inject Catalogue catalogue;
     @Inject Customers customers;
@@ -131,13 +134,25 @@ public class SalesOrders {
             throw new HermesException(NOT_FOUND, "Sales order not found",
                     "Sales order where orderID=" + orderID + " not found.");
 
+        // Если изменяется на тот же статус, что и сейчас - ничего не делаем
         if (salesOrder.getStatus()==status) return salesOrder;
-        salesOrder.setStatus(status);
-        entityManager.persist(salesOrder);
 
-        List<SalesOrderItem> entries = getOrderEntries(orderID);
-        for (SalesOrderItem entry:entries) {
-            inventory.updateCommittedStock(entry.getProductID());
+        // Пробуем обновить статус заказа и пересчитать остатки по каждой позиции
+        try {
+            salesOrder.setStatus(status);
+            entityManager.persist(salesOrder);
+            // Пересчитываем забронированные остатки для каждой позиции
+            List<SalesOrderItem> entries = getOrderEntries(orderID);
+            for (SalesOrderItem entry : entries) {
+                inventory.updateCommittedStock(entry.getProductID());
+            }
+        } catch (HermesException exception) {
+            try {
+                transactionManager.setRollbackOnly();
+            } catch (IllegalStateException | SystemException e) {
+                // todo как то сообщить, что что-то пошло не так
+            }
+            throw exception;
         }
         return salesOrder;
     }
@@ -161,8 +176,17 @@ public class SalesOrders {
                     "Cannot delete sales order, because status=" + salesOrder.getStatus() + " and its not changeable.");
         }
         String query = "DELETE FROM SalesOrderItem a WHERE a.orderID=" + salesOrder.getOrderID();
-        entityManager.createQuery(query).executeUpdate();
-        entityManager.remove(salesOrder);
+        try {
+            entityManager.createQuery(query).executeUpdate();
+            entityManager.remove(salesOrder);
+        } catch (Exception e) {
+            try {
+                transactionManager.setRollbackOnly();
+            } catch (IllegalStateException | SystemException exception) {
+                // todo как-то сообщать что что-то пошло не так
+            }
+            throw new HermesException(FORBIDDEN, "Cannot delete sales order", e.getMessage());
+        }
     }
 
     //---------------------------------------------------------------------------------------------------
@@ -258,7 +282,7 @@ public class SalesOrders {
             entry = getOrderEntry(orderID, productID);
             // Если такая позиция заказа есть - суммируем количество текущее и новое
             long totalquantity = entry.getquantity() + quantity;
-            entry.setquantity(totalquantity);
+            entry.setQuantity(totalquantity);
             // Обновляем на текущую цену
             entry.setPrice(product.getPrice());
         } catch (HermesException exception) {
@@ -271,12 +295,20 @@ public class SalesOrders {
             }
         }
 
-        // Сохраняем позицию заказа
-        entityManager.persist(entry);
-
-        // Обновить временную метку последнего изменения заказа
-        salesOrder.setTimestamp(System.currentTimeMillis());
-        entityManager.persist(salesOrder);
+        try {
+            // Сохраняем позицию заказа
+            entityManager.persist(entry);
+            // Обновить временную метку последнего изменения заказа
+            salesOrder.setTimestamp(System.currentTimeMillis());
+            entityManager.persist(salesOrder);
+        } catch (Exception exception) {
+            try {
+                transactionManager.setRollbackOnly();
+            } catch (IllegalStateException | SystemException e) {
+                // todo как-то сообщаться, о том, что что-произошло
+            }
+            throw exception;
+        }
 
         return entry;
     }
@@ -310,13 +342,22 @@ public class SalesOrders {
             managedEntry.setProductID(productID);
             managedEntry.setPrice(product.getPrice());
         }
-        managedEntry.setquantity(quantity);
-        entityManager.persist(managedEntry);
 
-        // Обновить временную метку последнего изменения заказа
-        salesOrder.setTimestamp(System.currentTimeMillis());
-        entityManager.persist(salesOrder);
-
+        try {
+            // Обновляем позицию заказа
+            managedEntry.setQuantity(quantity);
+            entityManager.persist(managedEntry);
+            // Обновить временную метку последнего изменения заказа
+            salesOrder.setTimestamp(System.currentTimeMillis());
+            entityManager.persist(salesOrder);
+        } catch (Exception exception) {
+            try {
+                transactionManager.setRollbackOnly();
+            } catch (IllegalStateException | SystemException e) {
+                // todo как-то сообщаться, о том, что что-произошло
+            }
+            throw exception;
+        }
         return managedEntry;
     }
 
@@ -384,12 +425,19 @@ public class SalesOrders {
                     "Cannot remove sales order entry, because sales order status=" +
                             salesOrder.getStatus() + " and its not changeable.");
 
-        entityManager.remove(managedEntry);
-
-        // Обновить временную метку последнего изменения заказа
-        salesOrder.setTimestamp(System.currentTimeMillis());
-        entityManager.persist(salesOrder);
-
+        try {
+            entityManager.remove(managedEntry);
+            // Обновить временную метку последнего изменения заказа
+            salesOrder.setTimestamp(System.currentTimeMillis());
+            entityManager.persist(salesOrder);
+        } catch (Exception exception) {
+            try {
+                transactionManager.setRollbackOnly();
+            } catch (IllegalStateException | SystemException e) {
+                // todo как-то сообщаться, о том, что что-произошло
+            }
+            throw exception;
+        }
         return true;
     }
 
