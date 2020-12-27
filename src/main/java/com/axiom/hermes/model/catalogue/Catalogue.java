@@ -99,7 +99,7 @@ public class Catalogue {
             try {
                 transactionManager.setRollbackOnly();
             } catch (IllegalStateException | SystemException e) {
-                // todo как-то сообщаться, о том, что что-произошло
+                e.printStackTrace();
             }
             throw exception;
         }
@@ -174,7 +174,7 @@ public class Catalogue {
             try {
                 transactionManager.setRollbackOnly();
             } catch (IllegalStateException | SystemException e) {
-                // todo как-то сообщаться, о том, что что-произошло
+                e.printStackTrace();
             }
             throw exception;
         }

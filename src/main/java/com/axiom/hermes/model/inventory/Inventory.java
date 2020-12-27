@@ -214,10 +214,11 @@ public class Inventory {
         }
 
         // Обновляем информацию в складской карточке
-        long committedStock = salesOrders.getCommittedQuantity(productID);
-        long availableForSale = stockInfo.getStockOnHand() - committedStock;
+        long stockOnHand = stockInfo.getStockOnHand();
+        long committedQuantity = salesOrders.getCommittedQuantity(productID);
+        long availableForSale = stockOnHand - committedQuantity;
         if (availableForSale < 0) availableForSale = 0;
-        stockInfo.setCommittedStock(committedStock);
+        stockInfo.setCommittedStock(committedQuantity);
         stockInfo.setAvailableForSale(availableForSale);
         stockInfo.setTimestamp(System.currentTimeMillis());
         entityManager.persist(stockInfo);
@@ -282,7 +283,7 @@ public class Inventory {
             try {
                 transactionManager.setRollbackOnly();
             } catch (IllegalStateException | SystemException e) {
-                // todo как-то сообщить что пошло что-то не так
+                e.printStackTrace();
             }
             throw exception;
         }
@@ -338,7 +339,7 @@ public class Inventory {
             try {
                 transactionManager.setRollbackOnly();
             } catch (IllegalStateException | SystemException e) {
-                // todo как-то сообщить что пошло что-то не так
+                e.printStackTrace();
             }
             throw exception;
         }
@@ -409,8 +410,6 @@ public class Inventory {
             stockOnHand += quantity;
             availableForSale = stockOnHand - committedStock;
         }
-
-        // TODO здесь можно будет обновлять таблицу StockBalance для сохранения истории складской карточки
 
         // Обновляем информацию в складской карточке
         stockInfo.setStockOnHand(stockOnHand);

@@ -84,10 +84,10 @@ public class Customers {
         customer.setMobile(mobile);
         try {
             // Ищем клиента с таким же мобильным номером
-            getCustomerByMobile(customer.getMobile());
+            Customer found = getCustomerByMobile(customer.getMobile());
             // Если нашли - добавлять клиента нельзя
             throw new HermesException(FORBIDDEN, "Cannot add customer",
-                    "Customer with the same mobile already exist");
+                    "Customer with the same mobile already exist, its customerID=" + found.getCustomerID());
         } catch (HermesException exception) {
             // Если не нашли - добавляем
             if (exception.getStatus()== NOT_FOUND) {
@@ -118,8 +118,9 @@ public class Customers {
         if (customer.getAddress()!=null) managed.setAddress(customer.getAddress());
         if (customer.getCity()!=null) managed.setCity(customer.getCity());
         if (customer.getCountry()!=null) managed.setCountry(customer.getCountry());
-        // todo поле verified выставляет дистрибьютор (надо сменить тип и вынести отдельно)
+
         managed.setVerified(customer.isVerified());
+
         entityManager.persist(managed);
         return customer;
     }

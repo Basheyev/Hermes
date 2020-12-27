@@ -29,7 +29,6 @@ public class StockTransaction {
     public static final int OUT_WRITE_OFF = 22;       // Списание товара (расход)
 
     //-------------------------------------------------------------------------------------
-    // todo добавить поле суммы = quantity * price (+индекс side, sum)
 
     @Id
     @GeneratedValue

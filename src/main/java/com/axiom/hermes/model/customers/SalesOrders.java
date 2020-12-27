@@ -35,8 +35,6 @@ public class SalesOrders {
     @Inject Customers customers;
     @Inject Inventory inventory;
 
-    // todo Нужна настройка - принимать ли заказы где заказ товара больше текущих/доступных остатков
-
     /**
      * Получить все заказы всех клиентов за указанный период
      * @return список заказов клиентов
@@ -141,7 +139,8 @@ public class SalesOrders {
         try {
             salesOrder.setStatus(status);
             entityManager.persist(salesOrder);
-            // Пересчитываем забронированные остатки для каждой позиции
+            // Статус заказа может как бронировать, так и разбронировать товарные позиции, потому
+            // Пересчитываем забронированные остатки в складских карточкаъ для каждой позиции заказа
             List<SalesOrderItem> entries = getOrderEntries(orderID);
             for (SalesOrderItem entry : entries) {
                 inventory.updateCommittedStock(entry.getProductID());
@@ -150,7 +149,7 @@ public class SalesOrders {
             try {
                 transactionManager.setRollbackOnly();
             } catch (IllegalStateException | SystemException e) {
-                // todo как то сообщить, что что-то пошло не так
+                e.printStackTrace();
             }
             throw exception;
         }
@@ -183,7 +182,7 @@ public class SalesOrders {
             try {
                 transactionManager.setRollbackOnly();
             } catch (IllegalStateException | SystemException exception) {
-                // todo как-то сообщать что что-то пошло не так
+                e.printStackTrace();
             }
             throw new HermesException(FORBIDDEN, "Cannot delete sales order", e.getMessage());
         }
@@ -281,8 +280,8 @@ public class SalesOrders {
             // Есть ли позиция по такому продукту в этом заказе
             entry = getOrderEntry(orderID, productID);
             // Если такая позиция заказа есть - суммируем количество текущее и новое
-            long totalquantity = entry.getquantity() + quantity;
-            entry.setQuantity(totalquantity);
+            long totalQuantity = entry.getquantity() + quantity;
+            entry.setQuantity(totalQuantity);
             // Обновляем на текущую цену
             entry.setPrice(product.getPrice());
         } catch (HermesException exception) {
@@ -305,7 +304,7 @@ public class SalesOrders {
             try {
                 transactionManager.setRollbackOnly();
             } catch (IllegalStateException | SystemException e) {
-                // todo как-то сообщаться, о том, что что-произошло
+                e.printStackTrace();
             }
             throw exception;
         }
@@ -340,6 +339,7 @@ public class SalesOrders {
             Product product = catalogue.getProduct(productID);
             if (product==null || !product.isAvailable()) return null;
             managedEntry.setProductID(productID);
+            // Цену товарной позиции берем из каталога
             managedEntry.setPrice(product.getPrice());
         }
 
@@ -354,7 +354,7 @@ public class SalesOrders {
             try {
                 transactionManager.setRollbackOnly();
             } catch (IllegalStateException | SystemException e) {
-                // todo как-то сообщаться, о том, что что-произошло
+                e.printStackTrace();
             }
             throw exception;
         }
@@ -398,7 +398,7 @@ public class SalesOrders {
             salesOrderItem = getOrderEntry(orderID, productID);
         } catch (HermesException exception) {
             // Если не нашли - ничего не делаем и уходим
-            if (exception.getStatus()== NOT_FOUND) return;
+            if (exception.getStatus() == NOT_FOUND) return;
             // Если произошло что-то другое - кидаем исключение дальше
             throw exception;
         }
@@ -417,7 +417,9 @@ public class SalesOrders {
     @Transactional
     public boolean removeOrderEntry(long entryID) throws HermesException {
         Validator.nonNegativeInteger("entryID", entryID);
+
         SalesOrderItem managedEntry = getOrderEntry(entryID);
+
         // Если заказ уже изменять нельзя уходим
         SalesOrder salesOrder = getOrder(managedEntry.getOrderID());
         if (salesOrder.getStatus() >= SalesOrder.CHANGEABLE_BEFORE)
@@ -426,6 +428,7 @@ public class SalesOrders {
                             salesOrder.getStatus() + " and its not changeable.");
 
         try {
+            // Удаляем позицию заказа
             entityManager.remove(managedEntry);
             // Обновить временную метку последнего изменения заказа
             salesOrder.setTimestamp(System.currentTimeMillis());
@@ -434,7 +437,7 @@ public class SalesOrders {
             try {
                 transactionManager.setRollbackOnly();
             } catch (IllegalStateException | SystemException e) {
-                // todo как-то сообщаться, о том, что что-произошло
+                e.printStackTrace();
             }
             throw exception;
         }
@@ -449,8 +452,8 @@ public class SalesOrders {
     @Transactional
     public long getCommittedQuantity(long productID) throws HermesException {
         Validator.nonNegativeInteger("productID", productID);
-        // Вычисляем Committed Stock (забронированное количество) - это сумма неисполненных
-        // позиции с указанным productID подтвержденных, но пока не исполненных заказов
+        // Вычисляем Committed Stock (забронированное количество) - это количество товара productID
+        // в подтвержденных заказах, которое мы должны отгрузить клиенту.
         String sqlQuery = "SELECT SUM(SalesOrderItem.quantity - SalesOrderItem.fulfilledQuantity) " +
                 "FROM SalesOrderItem " +
                 "LEFT JOIN SalesOrder ON SalesOrder.orderID=SalesOrderItem.orderID " +
