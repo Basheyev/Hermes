@@ -10,6 +10,7 @@ import com.axiom.hermes.model.customers.entities.SalesOrderItem;
 import com.axiom.hermes.model.inventory.entities.StockCard;
 import com.axiom.hermes.model.inventory.entities.StockTransaction;
 
+import static com.axiom.hermes.common.exceptions.HermesException.INTERNAL_SERVER_ERROR;
 import static com.axiom.hermes.common.exceptions.HermesException.NOT_FOUND;
 import static com.axiom.hermes.model.inventory.entities.StockTransaction.*;
 
@@ -107,12 +108,19 @@ public class Inventory {
      * Получить все складские транзакции по указанному заказу
      * @param orderID заказа
      * @return список складских транзакций по указанному заказу
+     * @throws HermesException информация об ошибке
      */
+    @Transactional
     public List<StockTransaction> getOrderTransactions(long orderID) throws HermesException {
         Validator.nonNegativeInteger("orderID", orderID);
         List<StockTransaction> orderTransactions;
         String query = "SELECT a FROM StockTransaction a WHERE a.orderID=" + orderID;
-        orderTransactions = entityManager.createQuery(query, StockTransaction.class).getResultList();
+        try {
+            orderTransactions = entityManager.createQuery(query, StockTransaction.class).getResultList();
+        } catch (RuntimeException exception) {
+            exception.printStackTrace();
+            throw new HermesException(INTERNAL_SERVER_ERROR, "Query failed", exception.getMessage());
+        }
         return orderTransactions;
     }
 
@@ -122,7 +130,9 @@ public class Inventory {
      * @param startTime с какого времени
      * @param endTime по какое время
      * @return список складских транзакций по указнной товарной позиции в указанный период
+     * @throws HermesException информация об ошибке
      */
+    @Transactional
     public List<StockTransaction> getProductTransactions(long productID, long startTime, long endTime)
         throws HermesException {
         // Проверяем валидность параметров
@@ -135,7 +145,13 @@ public class Inventory {
         if (startTime>0 || endTime > 0) {
             query += " WHERE a.timestamp BETWEEN " + startTime + " AND " + endTime;
         }
-        productTransactions = entityManager.createQuery(query, StockTransaction.class).getResultList();
+        // fixme добавить лимит выборки 200 позиций
+        try {
+            productTransactions = entityManager.createQuery(query, StockTransaction.class).getResultList();
+        } catch (RuntimeException exception) {
+            exception.printStackTrace();
+            throw new HermesException(INTERNAL_SERVER_ERROR, "Query failed", exception.getMessage());
+        }
         return productTransactions;
     }
 
@@ -167,12 +183,18 @@ public class Inventory {
     /**
      * Возвращает информацию по всем складским карточкам
      * @return список складских карточек
+     * @throws HermesException информация об ошибке
      */
     @Transactional
-    public List<StockCard> getAllStocks() {
+    public List<StockCard> getAllStocks() throws HermesException {
         List<StockCard> allStocks;
         String query = "SELECT a FROM StockCard a";
-        allStocks = entityManager.createQuery(query, StockCard.class).getResultList();
+        try {
+            allStocks = entityManager.createQuery(query, StockCard.class).getResultList();
+        } catch (RuntimeException exception) {
+            exception.printStackTrace();
+            throw new HermesException(INTERNAL_SERVER_ERROR, "Query failed", exception.getMessage());
+        }
         return allStocks;
     }
 
@@ -229,12 +251,18 @@ public class Inventory {
     /**
      * Возвращает список складских карточек товарных позиций по которым требуется пополнение запасов
      * @return список складских карточек товарных позиций требующих пополнения запасов
+     * @throws HermesException информация об ошибке
      */
     @Transactional
-    public List<StockCard> getReplenishmentStocks() {
+    public List<StockCard> getReplenishmentStocks() throws HermesException {
         List<StockCard> stocks;
         String query = "SELECT a FROM StockCard a WHERE a.stockOnHand <= a.reorderPoint";
-        stocks = entityManager.createQuery(query, StockCard.class).getResultList();
+        try {
+            stocks = entityManager.createQuery(query, StockCard.class).getResultList();
+        } catch (RuntimeException exception) {
+            exception.printStackTrace();
+            throw new HermesException(INTERNAL_SERVER_ERROR, "Query failed", exception.getMessage());
+        }
         return stocks;
     }
 

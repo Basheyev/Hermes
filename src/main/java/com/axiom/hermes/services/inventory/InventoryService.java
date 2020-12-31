@@ -24,14 +24,17 @@ public class InventoryService {
 
     public InventoryService() { }
 
+    //--------------------------------------------------------------------------------------------------------
+    // Информация об остатках
+    //--------------------------------------------------------------------------------------------------------
+
     /**
      * Получить информацию по всем остаткам товаров
      * @return список складских карточек
      */
     @GET
-    public Response getAllStocks() {
+    public Response getAllStocks() throws HermesException {
         List<StockCard> allStock = inventory.getAllStocks();
-        if (allStock==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(allStock).build();
     }
 
@@ -41,13 +44,24 @@ public class InventoryService {
      */
     @GET
     @Path("/getReplenishmentStocks")
-    public Response getReplenishmentStocks() {
+    public Response getReplenishmentStocks() throws HermesException {
         List<StockCard> stocks = inventory.getReplenishmentStocks();
-        if (stocks==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(stocks).build();
     }
 
+    //--------------------------------------------------------------------------------------------------------
+    // Проведение складских транзакций
+    //--------------------------------------------------------------------------------------------------------
 
+    /**
+     * Проводка - закуп товара от поставщика
+     * @param orderID заказа
+     * @param productID товара
+     * @param quantity количества
+     * @param price цена единицы
+     * @return
+     * @throws HermesException
+     */
     @GET
     @Path("/purchase")
     public Response purchase(@QueryParam("orderID") long orderID,
@@ -55,10 +69,18 @@ public class InventoryService {
                              @QueryParam("quantity") long quantity,
                              @QueryParam("price") double price) throws HermesException {
         StockTransaction purchase = inventory.purchase(orderID, productID, quantity, price);
-        if (purchase==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(purchase).build();
     }
 
+    /**
+     * Проводка - возврат товара от клиента
+     * @param orderID заказа
+     * @param productID товара
+     * @param quantity количества
+     * @param price цена единицы
+     * @return проведенная транзакция
+     * @throws HermesException информация об ошибке
+     */
     @GET
     @Path("/saleReturn")
     public Response saleReturn(@QueryParam("orderID") long orderID,
@@ -66,20 +88,35 @@ public class InventoryService {
                                @QueryParam("quantity") long quantity,
                                @QueryParam("price") double price) throws HermesException {
         StockTransaction saleReturn = inventory.saleReturn(orderID, productID, quantity, price);
-        if (saleReturn==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(saleReturn).build();
     }
 
+    /**
+     * Проводка - продажа товара
+     * @param orderID заказа
+     * @param productID товара
+     * @param quantity количество
+     * @return проведенная транзакция
+     * @throws HermesException информация об ошибке
+     */
     @GET
     @Path("/sale")
     public Response sale(@QueryParam("orderID") long orderID,
                          @QueryParam("productID") long productID,
                          @QueryParam("quantity") long quantity) throws HermesException {
         StockTransaction sale = inventory.sale(orderID, productID, quantity);
-        if (sale==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(sale).build();
     }
 
+    /**
+     * Проводка - закуп товара
+     * @param orderID заказа
+     * @param productID товара
+     * @param quantity количество
+     * @param price цена закупа единиы товара
+     * @return проведенная транзакция
+     * @throws HermesException информация об ошибке
+     */
     @GET
     @Path("/purchaseReturn")
     public Response purchaseReturn(@QueryParam("orderID") long orderID,
@@ -87,10 +124,19 @@ public class InventoryService {
                                    @QueryParam("quantity") long quantity,
                                    @QueryParam("price") double price) throws HermesException {
         StockTransaction purchaseReturn = inventory.purchaseReturn(orderID, productID, quantity, price);
-        if (purchaseReturn==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(purchaseReturn).build();
     }
 
+
+    /**
+     * Проводка - списание товара с учёта
+     * @param orderID не используется
+     * @param productID товара
+     * @param quantity количество
+     * @param price цена списания единицы товара
+     * @return проведенная транзакция
+     * @throws HermesException информация об ошибке
+     */
     @GET
     @Path("/writeOff")
     public Response writeOff(@QueryParam("orderID") long orderID,
@@ -98,7 +144,6 @@ public class InventoryService {
                              @QueryParam("quantity") long quantity,
                              @QueryParam("price") double price) throws HermesException {
         StockTransaction writeOff = inventory.writeOff(orderID, productID, quantity, price);
-        if (writeOff==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(writeOff).build();
     }
 
@@ -106,6 +151,7 @@ public class InventoryService {
      * Получить все складские транзакции по указанному заказу
      * @param orderID заказа
      * @return список складских транзакций по указанному заказу
+     * @throws HermesException информация об ошибке
      */
     @GET
     @Path("/getOrderTransactions")
@@ -120,6 +166,7 @@ public class InventoryService {
      * @param startTime с какого времени
      * @param endTime по какое время
      * @return список складских транзакций по указнной товарной позиции в указанный период
+     * @throws HermesException информация об ошибке
      */
     @GET
     @Path("/getProductTransactions")
@@ -132,6 +179,12 @@ public class InventoryService {
         return Response.ok(productTransactions).build();
     }
 
+    /**
+     * Получить карточку товара по ID
+     * @param productID товара
+     * @return складская карточка
+     * @throws HermesException информация об ошибке
+     */
     @GET
     @Path("/getStockCard")
     public Response getStockCard(@QueryParam("productID") long productID) throws HermesException {

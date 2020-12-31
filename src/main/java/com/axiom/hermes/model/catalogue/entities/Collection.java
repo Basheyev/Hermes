@@ -5,7 +5,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 
 /**
- * Коллекцмя товаров
+ * Коллекция товаров
  */
 @Entity
 public class Collection {
