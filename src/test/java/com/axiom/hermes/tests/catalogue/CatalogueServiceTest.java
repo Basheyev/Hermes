@@ -126,7 +126,7 @@ public class CatalogueServiceTest {
                         .header("Content-Type", "application/json")
                         .body(request)
                 .when()
-                        .post("/catalogue/updateProduct")
+                        .put("/catalogue/updateProduct")
                 .then()
                         .statusCode(200)
                         .assertThat()
@@ -285,7 +285,7 @@ public class CatalogueServiceTest {
     public void removeProduct() {
 
         given().
-                when().get("/catalogue/removeProduct?productID=" + productID).
+                when().delete("/catalogue/removeProduct?productID=" + productID).
                 then().assertThat().statusCode(200).extract().asString();
 
         String response =

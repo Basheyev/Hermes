@@ -38,6 +38,7 @@ public class SalesOrders {
     /**
      * Получить все заказы всех клиентов за указанный период
      * @return список заказов клиентов
+     * @throws HermesException информация об ошибке
      */
     @Transactional
     public List<SalesOrder> getAllOrders(long startTime, long endTime, int status) throws HermesException {
@@ -67,6 +68,7 @@ public class SalesOrders {
      * @param customerID клиент
      * @param status статус заказов
      * @return список заказов клиента с указанным статусом
+     * @throws HermesException информация об ошибке
      */
     @Transactional
     public List<SalesOrder> getOrders(long customerID, int status) throws HermesException {
@@ -89,6 +91,7 @@ public class SalesOrders {
      * Добавить новый заказ клиента
      * @param customerID клиент
      * @return созданный новый заказ или null если такого клиента нет
+     * @throws HermesException информация об ошибке
      */
     @Transactional
     public SalesOrder addOrder(long customerID) throws HermesException {
@@ -104,6 +107,7 @@ public class SalesOrders {
      * Получить заказа по ID
      * @param orderID заказа
      * @return найденный заказ или null если не найден
+     * @throws HermesException информация об ошибке
      */
     @Transactional
     public SalesOrder getOrder(long orderID) throws HermesException {
@@ -122,6 +126,7 @@ public class SalesOrders {
      * @param orderID заказа
      * @param status новый статус
      * @return обновленный заказ с измененным статусом
+     * @throws HermesException информация об ошибке
      */
     @Transactional
     public SalesOrder changeStatus(long orderID, int status) throws HermesException {
@@ -159,8 +164,8 @@ public class SalesOrders {
     /**
      * Удалить заказ включая все его позиции
      * @param orderID заказа
-     * @return true если удален, false если не найден или его
      * нельзя изменять (статус выше неизменямого или есть связанные транзакции)
+     * @throws HermesException информация об ошибке
      */
     @Transactional
     public void removeOrder(long orderID) throws HermesException {
@@ -412,10 +417,9 @@ public class SalesOrders {
     /**
      * Удалить позицию заказа
      * @param entryID позиции заказа
-     * @return true если удалили, false если не найдена
      */
     @Transactional
-    public boolean removeOrderEntry(long entryID) throws HermesException {
+    public void removeOrderEntry(long entryID) throws HermesException {
         Validator.nonNegativeInteger("entryID", entryID);
 
         SalesOrderItem managedEntry = getOrderEntry(entryID);
@@ -441,7 +445,6 @@ public class SalesOrders {
             }
             throw exception;
         }
-        return true;
     }
 
     /**

@@ -197,6 +197,7 @@ public class Inventory {
      * Обновляет в складской карточке количество забронированнного товара по данным подтвержденных заказов
      * @param productID товарная позиция
      * @return обновленная складская карточка
+     * @throws HermesException информация об ошибке
      */
     @Transactional
     public StockCard updateCommittedStock(long productID) throws HermesException {
@@ -250,7 +251,7 @@ public class Inventory {
      * @param quantity количество
      * @param price цена
      * @return сохраненная складская транзакция
-     * @throws HermesException
+     * @throws HermesException информация об ошибке
      */
     @Transactional
     private StockTransaction incomingStock(int opCode, long orderID, long productID, long quantity, double price)
@@ -271,7 +272,7 @@ public class Inventory {
             }
         }
 
-        StockTransaction transaction = null;
+        StockTransaction transaction;
         try {
             // Формируем складскую транзакцию
             transaction = new StockTransaction(orderID, productID, SIDE_IN, opCode, quantity, price);
@@ -298,7 +299,7 @@ public class Inventory {
      * @param quantity количество
      * @param price цена
      * @return сохраненная складская транзакция
-     * @throws HermesException
+     * @throws HermesException информация об ошибке
      */
     @Transactional
     private StockTransaction outgoingStock(int opCode, long orderID, long productID, long quantity, double price)
@@ -326,7 +327,7 @@ public class Inventory {
             }
         }
 
-        StockTransaction transaction = null;
+        StockTransaction transaction;
 
         try {
             // Формируем новую транзакцию
@@ -356,7 +357,7 @@ public class Inventory {
      * @param quantity количество
      * @param timestamp временна метка транзакции складского журнала
      * @return обновленная складская карточка
-     * @throws HermesException
+     * @throws HermesException информация об ошибке
      */
     @Transactional
     private StockCard updateStockBalance(int side,

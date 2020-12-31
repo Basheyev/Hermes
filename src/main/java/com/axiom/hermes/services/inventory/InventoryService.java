@@ -24,6 +24,10 @@ public class InventoryService {
 
     public InventoryService() { }
 
+    /**
+     * Получить информацию по всем остаткам товаров
+     * @return список складских карточек
+     */
     @GET
     public Response getAllStocks() {
         List<StockCard> allStock = inventory.getAllStocks();

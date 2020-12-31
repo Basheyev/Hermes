@@ -119,7 +119,7 @@ public class CustomersServiceTest {
                     "    \"name\": \"Башеев Болат Аскерович\"\n" +
                     "}")
         .when()
-            .post("/customers/updateCustomer")
+            .put("/customers/updateCustomer")
         .then()
             .statusCode(200)
             .assertThat()
@@ -137,7 +137,7 @@ public class CustomersServiceTest {
     public void removeCustomer() {
         String response =
                 given().
-                when().get("/customers/removeCustomer?customerID=" + customerID).
+                when().delete("/customers/removeCustomer?customerID=" + customerID).
                 then().statusCode(200).extract().asString();
         LOG.info("CustomerID=" + customerID + " deleted response=" + response);
     }

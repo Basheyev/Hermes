@@ -1,13 +1,11 @@
 package com.axiom.hermes.tests;
 
-import com.axiom.hermes.tests.inventory.InventoryServiceTest;
 import io.quarkus.test.junit.QuarkusTest;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.postgresql.core.v3.ConnectionFactoryImpl;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -26,7 +24,7 @@ public class OrderE2ETest {
 
 
     public static final int purchasequantity = 30;
-    public static final int buyquantity = 24;
+    public static final int buyQuantity = 24;
 
     private static int productID;
     private static int initialStock;
@@ -162,11 +160,11 @@ public class OrderE2ETest {
         LOG.info("OrderID=" + orderID + " entry added: " + addedEntryID);
 
         int quantity = given().
-                when().get("/salesOrders/updateOrderEntry?entryID=" + addedEntryID +
-                "&productID=" + productID + "&quantity=" + buyquantity).
+                when().put("/salesOrders/updateOrderEntry?entryID=" + addedEntryID +
+                "&productID=" + productID + "&quantity=" + buyQuantity).
                 then().statusCode(200).assertThat()
                     .body("productID", equalTo(productID))
-                    .body("quantity", equalTo(buyquantity))
+                    .body("quantity", equalTo(buyQuantity))
                 .extract().path("quantity");
 
         LOG.info("OrderID=" + orderID + " entry updated: " + addedEntryID + " quantity=" + quantity);
@@ -178,7 +176,7 @@ public class OrderE2ETest {
     public void changeOrderStatus() {
         // Меняем статус заказа на подтвержденный
         given().
-            when().get(
+            when().put(
                     "/salesOrders/changeStatus?orderID=" + orderID +
                             "&status=" + STATUS_CONFIRMED).
             then()
@@ -195,8 +193,8 @@ public class OrderE2ETest {
                 .statusCode(200)
                 .body("productID", equalTo(productID))
                 .body("stockOnHand", equalTo(initialStock + purchasequantity))
-                .body("committedStock", equalTo(buyquantity))
-                .body("availableForSale", equalTo(initialStock + purchasequantity - buyquantity))
+                .body("committedStock", equalTo(buyQuantity))
+                .body("availableForSale", equalTo(initialStock + purchasequantity - buyQuantity))
             .extract().asString();
 
         LOG.info("ProductID="+ productID + " stock information:\n" + makePretty(response));
@@ -215,8 +213,8 @@ public class OrderE2ETest {
                 .statusCode(200)
                 .body("productID", equalTo(productID))
                 .body("stockOnHand", equalTo(initialStock + purchasequantity))
-                .body("committedStock", equalTo(buyquantity))
-                .body("availableForSale", equalTo(initialStock + purchasequantity - buyquantity))
+                .body("committedStock", equalTo(buyQuantity))
+                .body("availableForSale", equalTo(initialStock + purchasequantity - buyQuantity))
             .extract().jsonPath().getInt("availableForSale");
 
         String response =
@@ -317,7 +315,7 @@ public class OrderE2ETest {
         // Изменить статус заказа на удаляемый
         given().
         when()
-            .get("/salesOrders/changeStatus?orderID=" + orderID + "&status=" + STATUS_NEW).
+            .put("/salesOrders/changeStatus?orderID=" + orderID + "&status=" + STATUS_NEW).
         then()
             .assertThat()
             .statusCode(200)
@@ -325,11 +323,11 @@ public class OrderE2ETest {
             .body("status", equalTo(STATUS_NEW));  // Проверям что заказ подтвержден
         // Удалить заказ
         given().
-                when().get("/salesOrders/removeOrder?orderID=" + orderID).
+                when().delete("/salesOrders/removeOrder?orderID=" + orderID).
                 then().statusCode(200);
         // Удалить клиента
         given().
-                when().get("/customers/removeCustomer?customerID=" + customerID).
+                when().delete("/customers/removeCustomer?customerID=" + customerID).
                 then().statusCode(200).extract().asString();
 
         int availableForSale = given()

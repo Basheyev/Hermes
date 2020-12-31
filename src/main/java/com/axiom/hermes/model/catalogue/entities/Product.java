@@ -13,11 +13,9 @@ public class Product {
     @Id
     @GeneratedValue
     public long productID;                 // ID товара
-    private long categoryID;               // ID категории товара
     private String vendorCode;             // Артикул товара
     private String name;                   // Наименование товара
     private String description;            // Описание товара
-    private String unitOfMeasure;          // Единица измерения
     private double price;                  // Цена отпуска товара
     private boolean available;             // Доступно ли клиентам для выбора
     private long timestamp;                // Время последнего изменения в миллисекунлаз
@@ -26,7 +24,6 @@ public class Product {
 
     public Product(String vendorCode, String name, String description, double price) {
         this.vendorCode = vendorCode;
-        this.categoryID = 0;
         this.name = name;
         this.description = description;
         this.price = price;
@@ -38,14 +35,6 @@ public class Product {
 
     public void setProductID(long productID) {
         this.productID = productID;
-    }
-
-    public long getCategoryID() {
-        return categoryID;
-    }
-
-    public void setCategoryID(long categoryID) {
-        this.categoryID = categoryID;
     }
 
     public String getVendorCode() {
@@ -70,14 +59,6 @@ public class Product {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public String getUnitOfMeasure() {
-        return unitOfMeasure;
-    }
-
-    public void setUnitOfMeasure(String unitOfMeasure) {
-        this.unitOfMeasure = unitOfMeasure;
     }
 
     public double getPrice() {

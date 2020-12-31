@@ -216,7 +216,7 @@ public class InventoryServiceTest {
     public void removeCustomer() {
         String response =
                 given().
-                        when().get("/customers/removeCustomer?customerID=" + customerID).
+                        when().delete("/customers/removeCustomer?customerID=" + customerID).
                         then().statusCode(200).extract().asString();
         LOG.info("CustomerID=" + customerID + " deleted response=" + response);
     }

@@ -17,7 +17,7 @@ import java.util.List;
 
 import static com.axiom.hermes.common.exceptions.HermesException.*;
 
-// TODO Добавить управление категориями
+// TODO Добавить управление коллекциями
 
 /**
  * Каталог товаров
@@ -86,7 +86,7 @@ public class Catalogue {
                     BAD_REQUEST, "Invalid parameter",
                     "ProductID is not zero. Do not specify productID when creating new Product.");
         }
-        Validator.nonNegativeInteger("categoryID", product.getCategoryID());
+
         Validator.nonNegativeNumber("price", product.getPrice());
         Validator.validateName(product.getName());
         Validator.validateVendorCode(product.getVendorCode());
@@ -114,7 +114,6 @@ public class Catalogue {
     @Transactional
     public Product updateProduct(Product product) throws HermesException {
         Validator.nonNegativeInteger("productID", product.getProductID());
-        Validator.nonNegativeInteger("categoryID", product.getCategoryID());
         Validator.nonNegativeNumber("price", product.getPrice());
 
         Product managedEntity = getProduct(product.productID);
@@ -130,10 +129,8 @@ public class Catalogue {
             managedEntity.setName(product.getName());
         }
         if (product.getDescription()!=null) managedEntity.setDescription(product.getDescription());
-        if (product.getUnitOfMeasure()!=null) managedEntity.setUnitOfMeasure(product.getUnitOfMeasure());
 
         // Так как сложно тут отследить не указано или указали нулевое значение - просто присваиваем
-        managedEntity.setCategoryID(product.getCategoryID());
         managedEntity.setPrice(product.getPrice());
         managedEntity.setAvailable(product.isAvailable());
         managedEntity.setTimestamp(System.currentTimeMillis());

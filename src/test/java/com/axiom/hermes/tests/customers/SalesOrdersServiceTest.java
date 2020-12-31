@@ -145,7 +145,7 @@ public class SalesOrdersServiceTest {
     @Order(6)
     public void removeOrderEntries() {
         given().
-        when().get("/salesOrders/removeOrderEntry?entryID=" + addedEntryID).
+        when().delete("/salesOrders/removeOrderEntry?entryID=" + addedEntryID).
         then().statusCode(200);
     }
 
@@ -155,12 +155,12 @@ public class SalesOrdersServiceTest {
     @Order(7)
     public void changeOrderStatus() {
         given().
-        when().get("/salesOrders/changeStatus?orderID=" + addedOrderID + "&status=2").
+        when().put("/salesOrders/changeStatus?orderID=" + addedOrderID + "&status=2").
         then().statusCode(200).assertThat()
                 .body("orderID", equalTo(addedOrderID))       // Проверяем что orderID > 0
                 .body("status", equalTo(2));           // Проверям что status=1 (новый заказ)
         given().
-                when().get("/salesOrders/changeStatus?orderID=" + addedOrderID + "&status=1").
+                when().put("/salesOrders/changeStatus?orderID=" + addedOrderID + "&status=1").
                 then().statusCode(200).assertThat()
                 .body("orderID", equalTo(addedOrderID))       // Проверяем что orderID > 0
                 .body("status", equalTo(1));           // Проверям что status=1 (новый заказ)
@@ -172,7 +172,7 @@ public class SalesOrdersServiceTest {
     @Order(8)
     public void removeOrder() {
         given().
-        when().get("/salesOrders/removeOrder?orderID=" + addedOrderID).
+        when().delete("/salesOrders/removeOrder?orderID=" + addedOrderID).
         then().statusCode(200);
     }
 
@@ -182,7 +182,7 @@ public class SalesOrdersServiceTest {
     public void removeCustomer() {
         String response =
                 given().
-                        when().get("/customers/removeCustomer?customerID=" + customerID).
+                        when().delete("/customers/removeCustomer?customerID=" + customerID).
                         then().statusCode(200).extract().asString();
         LOG.info("CustomerID=" + customerID + " deleted response=" + response);
     }

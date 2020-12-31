@@ -1,10 +1,8 @@
 package com.axiom.hermes.services.customers;
 
 import com.axiom.hermes.common.exceptions.HermesException;
-import com.axiom.hermes.model.catalogue.entities.Product;
 import com.axiom.hermes.model.customers.Customers;
 import com.axiom.hermes.model.customers.entities.Customer;
-import com.axiom.hermes.model.customers.entities.SalesOrder;
 
 import javax.inject.Inject;
 import javax.ws.rs.*;
@@ -23,6 +21,10 @@ public class CustomersService {
     @Inject
     Customers customers;
 
+    /**
+     * Получить список всех клиентов
+     * @return список клиентов
+     */
     @GET
     public Response getAllCustomers() {
         List<Customer> allCustomers = customers.getAllCustomers();
@@ -30,6 +32,12 @@ public class CustomersService {
         return Response.ok(allCustomers).build();
     }
 
+    /**
+     * Добавить нового клиента
+     * @param newCustomer карточка клиента
+     * @return сохраненная карточка клиента
+     * @throws HermesException информация об ошибке
+     */
     @POST
     @Path("/addCustomer")
     public Response addCustomer(Customer newCustomer) throws HermesException {
@@ -38,6 +46,12 @@ public class CustomersService {
         return Response.ok(customer).build();
     }
 
+    /**
+     * Получить карточку клиента по ID
+     * @param customerID клиента
+     * @return карточка клиента
+     * @throws HermesException информация об ошибке
+     */
     @GET
     @Path("/getCustomer")
     public Response getCustomer(@QueryParam("customerID") long customerID) throws HermesException {
@@ -45,6 +59,12 @@ public class CustomersService {
         return Response.ok(customer).build();
     }
 
+    /**
+     * Получить карточку клиента по мобильному номеру
+     * @param mobile мобильный номер клиента
+     * @return карточка клиента
+     * @throws HermesException инфомрация об ошибке
+     */
     @GET
     @Path("/getCustomerByMobile")
     public Response getCustomerByMobile(@QueryParam("mobile") String mobile) throws HermesException {
@@ -52,14 +72,26 @@ public class CustomersService {
         return Response.ok(customer).build();
     }
 
-    @POST
+    /**
+     * Обновить информацию о клиенте
+     * @param customer карточка клиента
+     * @return обновленная карточка клиента
+     * @throws HermesException информация об ошибке
+     */
+    @PUT
     @Path("/updateCustomer")
     public Response updateCustomer(Customer customer) throws HermesException {
         Customer managed = customers.updateCustomer(customer);
         return Response.ok(managed).build();
     }
 
-    @GET
+    /**
+     * Удалить карточку клиента, если он нигде не упоминается
+     * @param customerID клиента
+     * @return 200 ОК если удален
+     * @throws HermesException информация об ошибке
+     */
+    @DELETE
     @Path("/removeCustomer")
     public Response removeCustomer(@QueryParam("customerID") long customerID) throws HermesException {
         customers.removeCustomer(customerID);

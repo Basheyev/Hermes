@@ -94,14 +94,14 @@ public class CatalogueService {
      * @param product информация о товарной позиции
      * @return обновленная или добавленная товарная позиация
      */
-    @POST
+    @PUT
     @Path("/updateProduct")
     public Response updateProduct(Product product) throws HermesException {
         Product managed = catalogue.updateProduct(product);
         return Response.ok(managed).build();
     }
 
-    @GET
+    @DELETE
     @Path("/removeProduct")
     public Response removeProduct(@QueryParam("productID") long productID) throws HermesException {
         catalogue.removeProduct(productID);
@@ -262,7 +262,7 @@ public class CatalogueService {
      * @param inputPart часть multipart/form-data
      * @param filename названия файла
      * @return массив байт файла
-     * @throws HermesException
+     * @throws HermesException информация об ошибке
      */
     private byte[] loadFile(InputPart inputPart, String filename) throws HermesException {
         InputStream inputStream;
@@ -289,7 +289,7 @@ public class CatalogueService {
      * @param originalImage оригинальное изображение
      * @param filename название файла
      * @return массив байт миниатюры в формате JPEG
-     * @throws HermesException
+     * @throws HermesException информация об ошибке
      */
     private byte[] createThumbnail(byte[] originalImage, String filename) throws HermesException {
         // Формируем буфер под миниатюрное изображение 128x128 image/jpeg (до 64Kb)

@@ -128,7 +128,6 @@ public class Customers {
     /**
      * Удалить карточку клиента если у него нет заказов
      * @param customerID карточки клиента
-     * @return true если удален, false если не найден или есть заказы с его участием
      */
     @Transactional
     public void removeCustomer(long customerID) throws HermesException {

@@ -5,13 +5,12 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 
 /**
- * Категория товара
+ * Коллекцмя товаров
  */
 @Entity
-public class Category {
+public class Collection {
     @Id  @GeneratedValue
-    public long categoryID;              // Код категории товара
-    public long parentID;                // Код родительской категории
+    public long collectionID;           // Код категории товара
     public String name;                 // Наименование категории товара
     public String description;          // Описание категории товара
     public int sortOrder;               // Порядок сортировки
