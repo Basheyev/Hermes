@@ -1,17 +1,17 @@
 package com.axiom.hermes.model.catalogue.entities;
 
-import org.jboss.resteasy.core.ExceptionAdapter;
 
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import java.io.IOException;
 
+/**
+ * Изображение с миниатюрой
+ */
 @Entity
 public class ProductImage {
 
     @Id
-    public long productID;                   // ID владельца (Product/Category)
+    private long productID;                  // ID товара
     private String filename;                 // Название файла
     private byte[] thumbnail;                // Миниатюрное изображение
     private byte[] image;                    // Полноразмерное изображение

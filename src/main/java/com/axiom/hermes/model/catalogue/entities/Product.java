@@ -12,7 +12,7 @@ import javax.persistence.Id;
 public class Product {
     @Id
     @GeneratedValue
-    public long productID;                 // ID товара
+    private long productID;                // ID товара
     private String vendorCode;             // Артикул товара
     private String name;                   // Наименование товара
     private String description;            // Описание товара
