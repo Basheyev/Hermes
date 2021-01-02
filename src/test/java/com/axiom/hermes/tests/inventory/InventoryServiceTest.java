@@ -67,7 +67,7 @@ public class InventoryServiceTest {
                         .body("{\n" +
                                 "    \"name\": \"CUP OF COFFEE\",\n" +
                                 "    \"description\": \"MACCOFFEE\",\n" +
-                                "    \"price\": 5,\n" +
+                                "    \"unitCost\": 5,\n" +
                                 "    \"vendorCode\": \"CCMAC\"\n" +
                                 "}")
                         .when()
@@ -100,13 +100,13 @@ public class InventoryServiceTest {
         String response =
             given()
             .when()
-                .get("/inventory/purchase?productID=" + productID + "&quantity=10&price=20")
+                .get("/inventory/purchase?productID=" + productID + "&quantity=10&unitCost=20")
             .then()
                 .assertThat()
                 .statusCode(200)
                 .body("productID", equalTo(productID))
                 .body("quantity", equalTo(10))
-                .body("price", equalTo(20f))
+                .body("unitCost", equalTo(20f))
             .extract().asString();
         LOG.info(response);
     }
@@ -117,13 +117,13 @@ public class InventoryServiceTest {
         String response =
             given()
             .when()
-                .get("/inventory/saleReturn?productID=" + productID + "&quantity=5&price=20")
+                .get("/inventory/saleReturn?productID=" + productID + "&quantity=5&unitCost=20")
             .then()
                 .assertThat()
                 .statusCode(200)
                 .body("productID", equalTo(productID))
                 .body("quantity", equalTo(5))
-                .body("price", equalTo(20f))
+                .body("unitCost", equalTo(20f))
             .extract().asString();
         LOG.info(response);
     }
@@ -134,7 +134,7 @@ public class InventoryServiceTest {
         String response =
                 given()
                 .when()
-                    .get("/inventory/sale?productID=" + productID + "&quantity=10&price=30")
+                    .get("/inventory/sale?productID=" + productID + "&quantity=10&unitCost=30")
                 .then()
                     .assertThat()
                     .statusCode(200)
@@ -150,13 +150,13 @@ public class InventoryServiceTest {
         String response =
                 given()
                 .when()
-                    .get("/inventory/purchaseReturn?productID=" + productID + "&quantity=1&price=20")
+                    .get("/inventory/purchaseReturn?productID=" + productID + "&quantity=1&unitCost=20")
                 .then()
                     .assertThat()
                     .statusCode(200)
                     .body("productID", equalTo(productID))
                     .body("quantity", equalTo(1))
-                    .body("price", equalTo(20f))
+                    .body("unitCost", equalTo(20f))
 
                 .extract().asString();
         LOG.info(response);
@@ -168,13 +168,13 @@ public class InventoryServiceTest {
         String response =
                 given()
                 .when()
-                    .get("/inventory/writeOff?productID=" + productID + "&quantity=4&price=20")
+                    .get("/inventory/writeOff?productID=" + productID + "&quantity=4&unitCost=20")
                 .then()
                     .assertThat()
                     .statusCode(200)
                     .body("productID", equalTo(productID))
                     .body("quantity", equalTo(4))
-                    .body("price", equalTo(20f))
+                    .body("unitCost", equalTo(20f))
                 .extract().asString();
         LOG.info(response);
     }
@@ -185,7 +185,7 @@ public class InventoryServiceTest {
         String response =
                 given()
                         .when()
-                        .get("/inventory/sale?productID=" + productID + "&quantity=1000&price=30")
+                        .get("/inventory/sale?productID=" + productID + "&quantity=1000&unitCost=30")
                 .then()
                         .assertThat()
                         .statusCode(404)

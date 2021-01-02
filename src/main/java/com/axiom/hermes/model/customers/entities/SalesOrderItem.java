@@ -12,20 +12,20 @@ import javax.persistence.*;
 })
 public class SalesOrderItem {
     @Id @GeneratedValue
-    private long itemID;                    // Счётчик позиции
+    private long itemID;                     // Счётчик позиции
     private long orderID;                    // Код заказа
     private long productID;                  // Товарная позиция
-    private long quantity;                     // Количество заказанного товара
-    private double price;                    // Цена товара на момент заказа
-    private long fulfilledQuantity;            // Позиция заказа выполнена
+    private long quantity;                   // Количество заказанного товара
+    private double unitPrice;                // Цена товара на момент заказа
+    private long fulfilledQuantity;          // Позиция заказа выполнена
 
     public SalesOrderItem() { }
 
-    public SalesOrderItem(long orderID, long productID, long quantity, double price) {
+    public SalesOrderItem(long orderID, long productID, long quantity, double unitPrice) {
         this.orderID = orderID;
         this.productID = productID;
         this.quantity = quantity;
-        this.price = price;
+        this.unitPrice = unitPrice;
     }
 
     public long getItemID() {
@@ -52,7 +52,7 @@ public class SalesOrderItem {
         this.productID = productID;
     }
 
-    public long getquantity() {
+    public long getQuantity() {
         return quantity;
     }
 
@@ -60,12 +60,12 @@ public class SalesOrderItem {
         this.quantity = quantity;
     }
 
-    public double getPrice() {
-        return price;
+    public double getUnitPrice() {
+        return unitPrice;
     }
 
-    public void setPrice(double price) {
-        this.price = price;
+    public void setUnitPrice(double unitPrice) {
+        this.unitPrice = unitPrice;
     }
 
     public long getFulfilledQuantity() {

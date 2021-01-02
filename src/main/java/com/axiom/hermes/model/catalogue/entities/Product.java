@@ -16,7 +16,7 @@ public class Product {
     private String vendorCode;             // Артикул товара
     private String name;                   // Наименование товара
     private String description;            // Описание товара
-    private double price;                  // Цена отпуска товара
+    private double unitPrice;              // Цена отпуска товара
     private boolean available;             // Доступно ли клиентам для выбора
     private long timestamp;                // Время последнего изменения в миллисекунлаз
 
@@ -26,7 +26,7 @@ public class Product {
         this.vendorCode = vendorCode;
         this.name = name;
         this.description = description;
-        this.price = price;
+        this.unitPrice = price;
     }
 
     public long getProductID() {
@@ -61,12 +61,12 @@ public class Product {
         this.description = description;
     }
 
-    public double getPrice() {
-        return price;
+    public double getUnitPrice() {
+        return unitPrice;
     }
 
-    public void setPrice(double price) {
-        this.price = price;
+    public void setUnitPrice(double unitPrice) {
+        this.unitPrice = unitPrice;
     }
 
     public boolean isAvailable() {

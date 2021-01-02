@@ -23,7 +23,7 @@ public class OrderE2ETest {
     private static final Logger LOG = Logger.getLogger(OrderE2ETest.class);
 
 
-    public static final int purchasequantity = 30;
+    public static final int purchaseQuantity = 30;
     public static final int buyQuantity = 24;
 
     private static int productID;
@@ -45,7 +45,7 @@ public class OrderE2ETest {
                         .body("{\n" +
                                 "    \"name\": \"CUP OF COFFEE\",\n" +
                                 "    \"description\": \"MACCOFFEE\",\n" +
-                                "    \"price\": 5,\n" +
+                                "    \"unitPrice\": 5,\n" +
                                 "    \"vendorCode\": \"CCMAC\",\n" +
                                 "    \"available\": true" +
                                 "}")
@@ -83,13 +83,13 @@ public class OrderE2ETest {
                 given()
                 .when()
                     .get("/inventory/purchase?productID=" + productID +
-                            "&quantity=" + purchasequantity + "&price=20")
+                            "&quantity=" + purchaseQuantity + "&unitCost=20")
                 .then()
                     .assertThat()
                     .statusCode(200)
                     .body("productID", equalTo(productID))
-                    .body("quantity", equalTo(purchasequantity))
-                    .body("price", equalTo(20f))
+                    .body("quantity", equalTo(purchaseQuantity))
+                    .body("unitCost", equalTo(20f))
                 .extract().asString();
         LOG.info(makePretty(response));
     }
@@ -131,8 +131,10 @@ public class OrderE2ETest {
     @Order(4)
     public void addNewOrder() {
         orderID =
-                given().
-                when().get("/salesOrders/addOrder?customerID=" + customerID).
+                given()
+                    .header("Content-Type", "application/json")
+                    .body("{ \"customerID\":" + customerID + "}").
+                when().post("/salesOrders/addOrder").
                 then().statusCode(200).assertThat()
                     .body("orderID", greaterThan(0))     // Проверяем что orderID > 0
                     .body("customerID", equalTo(customerID))  // Что создан на нужного клиента
@@ -149,9 +151,11 @@ public class OrderE2ETest {
     @Test
     @Order(5)
     public void addOrderItems() {
-        int addedItemID = given().
-                when().get("/salesOrders/addOrderItem?orderID=" + orderID +
-                "&productID=" + productID + "&quantity=13").
+        int addedItemID = given()
+                .header("Content-Type", "application/json")
+                .body("{ \"orderID\":" + orderID +", \"productID\":" + productID + ", \"quantity\":13 }").
+
+                when().post("/salesOrders/addOrderItem").
                 then().statusCode(200).assertThat()
                 .body("productID", equalTo(productID))
                 .body("quantity", equalTo(13))
@@ -198,9 +202,9 @@ public class OrderE2ETest {
                 .assertThat()
                 .statusCode(200)
                 .body("productID", equalTo(productID))
-                .body("stockOnHand", equalTo(initialStock + purchasequantity))
+                .body("stockOnHand", equalTo(initialStock + purchaseQuantity))
                 .body("committedStock", equalTo(buyQuantity))
-                .body("availableForSale", equalTo(initialStock + purchasequantity - buyQuantity))
+                .body("availableForSale", equalTo(initialStock + purchaseQuantity - buyQuantity))
             .extract().asString();
 
         LOG.info("ProductID="+ productID + " stock information:\n" + makePretty(response));
@@ -218,16 +222,16 @@ public class OrderE2ETest {
             .assertThat()
                 .statusCode(200)
                 .body("productID", equalTo(productID))
-                .body("stockOnHand", equalTo(initialStock + purchasequantity))
+                .body("stockOnHand", equalTo(initialStock + purchaseQuantity))
                 .body("committedStock", equalTo(buyQuantity))
-                .body("availableForSale", equalTo(initialStock + purchasequantity - buyQuantity))
+                .body("availableForSale", equalTo(initialStock + purchaseQuantity - buyQuantity))
             .extract().jsonPath().getInt("availableForSale");
 
         String response =
                 given()
                 .when()
                     .get("/inventory/sale?productID=" + productID + "&quantity=" + (availableForSale+1) +
-                            "&price=30")
+                            "&cost=30")
                 .then()
                     .assertThat()
                     .statusCode(404)
@@ -265,7 +269,7 @@ public class OrderE2ETest {
         LOG.info("OrderID=" + myOrderID + " has " + itemsList.size() + " items");
 
         int itemID, itemProductID, quantity;
-        float price;
+        float unitPrice;
 
         // осуществить отгрузки позиций
         for (LinkedHashMap<String, Object> item:itemsList) {
@@ -273,12 +277,12 @@ public class OrderE2ETest {
             itemID = (Integer) item.get("itemID");
             itemProductID = (Integer) item.get("productID");
             quantity = (Integer) item.get("quantity");
-            price = (Float) item.get("price");
+            unitPrice = (Float) item.get("unitPrice");
 
             LOG.info("ItemID=" + itemID +
                      " productID=" + itemProductID +
                      " quantity=" + quantity +
-                     " price=" + price);
+                     " unitPrice=" + unitPrice);
 
             String response =
                     given()
@@ -352,13 +356,13 @@ public class OrderE2ETest {
                     given()
                             .when()
                             .get("/inventory/writeOff?productID=" + productID +
-                                    "&quantity=" + availableForSale + "&price=20")
+                                    "&quantity=" + availableForSale + "&unitCost=20")
                             .then()
                             .assertThat()
                             .statusCode(200)
                             .body("productID", equalTo(productID))
                             .body("quantity", equalTo(availableForSale))
-                            .body("price", equalTo(20f))
+                            .body("unitCost", equalTo(20f))
                             .extract().asString();
             LOG.info(makePretty(response));
         }

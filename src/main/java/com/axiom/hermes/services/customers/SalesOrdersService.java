@@ -58,14 +58,14 @@ public class SalesOrdersService {
 
     /**
      * Создать новую карточку заказа от имени клиента
-     * @param customerID клиента
+     * @param newOrder новый заказ с указанным клиентом
      * @return карточка созданного заказа
      * @throws HermesException информация об ошибке
      */
-    @GET
-    @Path("/addOrder") // todo здесь должен быть POST
-    public Response addOrder(@QueryParam("customerID") long customerID) throws HermesException {
-        SalesOrder order = salesOrders.addOrder(customerID);
+    @POST
+    @Path("/addOrder")
+    public Response addOrder(SalesOrder newOrder) throws HermesException {
+        SalesOrder order = salesOrders.addOrder(newOrder.getCustomerID());
         return Response.ok(order).build();
     }
 
@@ -140,32 +140,27 @@ public class SalesOrdersService {
 
     /**
      * Добавить позицию заказа
-     * @param orderID заказа
-     * @param productID товара
-     * @param quantity количество
+     * @param item новая позиция заказа (ID заказа, товар, количество)
      * @return созданная позиция заказа
      * @throws HermesException информация об ошибке
      */
-    @GET
-    @Path("/addOrderItem") // todo тут должен быть POST
-    public Response addOrderItem(
-            @QueryParam("orderID") long orderID,
-            @QueryParam("productID") long productID,
-            @QueryParam("quantity") long quantity) throws HermesException {
-        SalesOrderItem entry = salesOrders.addOrderItem(orderID, productID, quantity);
+    @POST
+    @Path("/addOrderItem")
+    public Response addOrderItem(SalesOrderItem item) throws HermesException {
+        SalesOrderItem entry = salesOrders.addOrderItem(item.getOrderID(), item.getProductID(), item.getQuantity());
         return Response.ok(entry).build();
     }
 
     /**
      * Обновляет позицию закза (код товара и/или количество)
-     * @param item измененная позиция заказа
+     * @param item измененная позиция заказа (ID заказа, товар, количество)
      * @return обновленная позиция заказа
      * @throws HermesException информация об ошибке
      */
     @PUT
     @Path("/updateOrderItem")
     public Response updateOrderItem(SalesOrderItem item) throws HermesException {
-        SalesOrderItem entry = salesOrders.updateOrderItem(item.getItemID(), item.getProductID(), item.getquantity());
+        SalesOrderItem entry = salesOrders.updateOrderItem(item.getItemID(), item.getProductID(), item.getQuantity());
         return Response.ok(entry).build();
     }
 

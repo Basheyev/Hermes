@@ -47,15 +47,17 @@ public class CatalogueServiceTest {
     @Test
     @Order(2)
     public void addProduct() {
+        String str = "{\n" +
+                "    \"vendorCode\": \"CCMAC\",\n" +
+                "    \"name\": \"CUP OF COFFEE\",\n" +
+                "    \"description\": \"MACCOFFEE\",\n" +
+                "    \"unitPrice\": 5.0,\n" +
+                "    \"available\": true\n" +
+                "}";
         productID =
         given()
             .header("Content-Type", "application/json")
-            .body("{\n" +
-                    "    \"name\": \"CUP OF COFFEE\",\n" +
-                    "    \"description\": \"MACCOFFEE\",\n" +
-                    "    \"price\": 5,\n" +
-                    "    \"vendorCode\": \"CCMAC\"\n" +
-                    "}")
+            .body(str)
         .when()
             .post("/catalogue/addProduct")
         .then()
@@ -63,6 +65,7 @@ public class CatalogueServiceTest {
             .assertThat()
             .body("vendorCode", equalTo("CCMAC"))
             .body("description", equalTo("MACCOFFEE"))
+            .body("unitPrice", equalTo(5f))
             .extract().path("productID");
 
         LOG.info("Product created productID=" + productID);
@@ -79,7 +82,7 @@ public class CatalogueServiceTest {
                         "    \"productID\": 1,\n" +
                         "    \"name\": \"CUP OF INVALID COFFEE\",\n" +
                         "    \"description\": \"MACCOFFEE\",\n" +
-                        "    \"price\": 5,\n" +
+                        "    \"unitPrice\": 5,\n" +
                         "    \"vendorCode\": \"CCMAC\"\n" +
                         "}")
             .when()
@@ -102,7 +105,7 @@ public class CatalogueServiceTest {
                         .body("name", equalTo("CUP OF COFFEE"))
                         .body("vendorCode", equalTo("CCMAC"))
                         .body("description", equalTo("MACCOFFEE"))
-                        .body("price", equalTo(5f))
+                        .body("unitPrice", equalTo(5f))
                 .extract().asString();
         LOG.info("Product get: " + response);
     }
@@ -116,7 +119,7 @@ public class CatalogueServiceTest {
                 "    \"productID\": " + productID + ",\n" +
                 "    \"name\": \"CUP OF COFFEE\",\n" +
                 "    \"description\": \"MACCOFFEE\",\n" +
-                "    \"price\": 15,\n" +
+                "    \"unitPrice\": 15.0,\n" +
                 "    \"vendorCode\": \"CCMAC\",\n" +
                 "    \"available\": true\n" +
                 "}";
@@ -133,7 +136,7 @@ public class CatalogueServiceTest {
                         .body("name", equalTo("CUP OF COFFEE"))
                         .body("vendorCode", equalTo("CCMAC"))
                         .body("description", equalTo("MACCOFFEE"))
-                        .body("price", equalTo(15f))
+                        .body("unitPrice", equalTo(15f))
                         .body("available", equalTo(true))
                         .extract().path("productID");
 

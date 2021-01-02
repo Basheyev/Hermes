@@ -87,7 +87,7 @@ public class Catalogue {
                     "ProductID is not zero. Do not specify productID when creating new Product.");
         }
 
-        Validator.nonNegativeNumber("price", product.getPrice());
+        Validator.nonNegativeNumber("unitPrice", product.getUnitPrice());
         Validator.validateName(product.getName());
         Validator.validateVendorCode(product.getVendorCode());
 
@@ -114,7 +114,7 @@ public class Catalogue {
     @Transactional
     public Product updateProduct(Product product) throws HermesException {
         Validator.nonNegativeInteger("productID", product.getProductID());
-        Validator.nonNegativeNumber("price", product.getPrice());
+        Validator.nonNegativeNumber("unitPrice", product.getUnitPrice());
 
         Product managedEntity = getProduct(product.productID);
         if (managedEntity==null) return null;
@@ -131,7 +131,7 @@ public class Catalogue {
         if (product.getDescription()!=null) managedEntity.setDescription(product.getDescription());
 
         // Так как сложно тут отследить не указано или указали нулевое значение - просто присваиваем
-        managedEntity.setPrice(product.getPrice());
+        managedEntity.setUnitPrice(product.getUnitPrice());
         managedEntity.setAvailable(product.isAvailable());
         managedEntity.setTimestamp(System.currentTimeMillis());
         entityManager.persist(managedEntity);

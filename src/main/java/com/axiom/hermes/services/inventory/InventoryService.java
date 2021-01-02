@@ -11,7 +11,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
 
-// todo Передалать GET методы создания транзакций на POST
+// Возможно стоит передалать GET методы создания транзакций на POST
+// хотя сейчас пользоваться проще - надо подумать
 
 /**
  * Сервис управления складским учетом
@@ -60,7 +61,7 @@ public class InventoryService {
      * @param orderID заказа
      * @param productID товара
      * @param quantity количества
-     * @param price цена единицы
+     * @param unitCost цена единицы
      * @return проведенная транзакция
      * @throws HermesException информация об ошибке
      */
@@ -69,8 +70,8 @@ public class InventoryService {
     public Response purchase(@QueryParam("orderID") long orderID,
                              @QueryParam("productID") long productID,
                              @QueryParam("quantity") long quantity,
-                             @QueryParam("price") double price) throws HermesException {
-        StockTransaction purchase = inventory.purchase(orderID, productID, quantity, price);
+                             @QueryParam("unitCost") double unitCost) throws HermesException {
+        StockTransaction purchase = inventory.purchase(orderID, productID, quantity, unitCost);
         return Response.ok(purchase).build();
     }
 
@@ -79,7 +80,7 @@ public class InventoryService {
      * @param orderID заказа
      * @param productID товара
      * @param quantity количества
-     * @param price цена единицы
+     * @param unitCost цена единицы
      * @return проведенная транзакция
      * @throws HermesException информация об ошибке
      */
@@ -88,8 +89,8 @@ public class InventoryService {
     public Response saleReturn(@QueryParam("orderID") long orderID,
                                @QueryParam("productID") long productID,
                                @QueryParam("quantity") long quantity,
-                               @QueryParam("price") double price) throws HermesException {
-        StockTransaction saleReturn = inventory.saleReturn(orderID, productID, quantity, price);
+                               @QueryParam("unitCost") double unitCost) throws HermesException {
+        StockTransaction saleReturn = inventory.saleReturn(orderID, productID, quantity, unitCost);
         return Response.ok(saleReturn).build();
     }
 
@@ -115,7 +116,7 @@ public class InventoryService {
      * @param orderID заказа
      * @param productID товара
      * @param quantity количество
-     * @param price цена закупа единиы товара
+     * @param unitCost цена закупа единиы товара
      * @return проведенная транзакция
      * @throws HermesException информация об ошибке
      */
@@ -124,8 +125,8 @@ public class InventoryService {
     public Response purchaseReturn(@QueryParam("orderID") long orderID,
                                    @QueryParam("productID") long productID,
                                    @QueryParam("quantity") long quantity,
-                                   @QueryParam("price") double price) throws HermesException {
-        StockTransaction purchaseReturn = inventory.purchaseReturn(orderID, productID, quantity, price);
+                                   @QueryParam("unitCost") double unitCost) throws HermesException {
+        StockTransaction purchaseReturn = inventory.purchaseReturn(orderID, productID, quantity, unitCost);
         return Response.ok(purchaseReturn).build();
     }
 
@@ -135,7 +136,7 @@ public class InventoryService {
      * @param orderID не используется
      * @param productID товара
      * @param quantity количество
-     * @param price цена списания единицы товара
+     * @param unitCost цена списания единицы товара
      * @return проведенная транзакция
      * @throws HermesException информация об ошибке
      */
@@ -144,8 +145,8 @@ public class InventoryService {
     public Response writeOff(@QueryParam("orderID") long orderID,
                              @QueryParam("productID") long productID,
                              @QueryParam("quantity") long quantity,
-                             @QueryParam("price") double price) throws HermesException {
-        StockTransaction writeOff = inventory.writeOff(orderID, productID, quantity, price);
+                             @QueryParam("unitCost") double unitCost) throws HermesException {
+        StockTransaction writeOff = inventory.writeOff(orderID, productID, quantity, unitCost);
         return Response.ok(writeOff).build();
     }
 

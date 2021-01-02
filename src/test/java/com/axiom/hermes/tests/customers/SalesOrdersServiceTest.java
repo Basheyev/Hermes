@@ -68,7 +68,7 @@ public class SalesOrdersServiceTest {
                     .body("{\n" +
                             "    \"name\": \"CUP OF COFFEE\",\n" +
                             "    \"description\": \"MACCOFFEE\",\n" +
-                            "    \"price\": 5,\n" +
+                            "    \"cost\": 5,\n" +
                             "    \"vendorCode\": \"CCMAC\",\n" +
                             "    \"available\": true\n" +
                             "}")
@@ -90,8 +90,10 @@ public class SalesOrdersServiceTest {
     @Order(2)
     public void addOrder() {
         addedOrderID =
-        given().
-        when().get("/salesOrders/addOrder?customerID=" + customerID).
+        given()
+             .header("Content-Type", "application/json")
+             .body("{ \"customerID\":" + customerID + "}").
+        when().post("/salesOrders/addOrder").
         then().statusCode(200).assertThat()
                 .body("orderID", greaterThan(0))        // Проверяем что orderID > 0
                 .body("status", equalTo(1))           // Проверям что status=1 (новый заказ)
@@ -118,9 +120,10 @@ public class SalesOrdersServiceTest {
     @Order(4)
     public void addOrderItem() {
         addedItemID =
-        given().
-        when().get("/salesOrders/addOrderItem?orderID=" + addedOrderID +
-                "&productID=" + productID + "&quantity=12").
+        given()
+                .header("Content-Type", "application/json")
+                .body("{ \"orderID\":" + addedOrderID +", \"productID\":" + productID + ", \"quantity\":12 }").
+        when().post("/salesOrders/addOrderItem").
         then().statusCode(200).assertThat()
                 .body("productID", equalTo(productID))
                 .body("quantity", equalTo(12))

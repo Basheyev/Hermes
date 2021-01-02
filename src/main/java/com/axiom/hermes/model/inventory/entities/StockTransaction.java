@@ -38,23 +38,21 @@ public class StockTransaction {
     public int side;                 // дебет/кредит (приход/расход)
     public int operationCode;        // код операции
     public long quantity;            // количество товара
-    public double price;             // цена товара
+    public double unitCost;          // цена товара
     public long orderID;             // код заказа как основание (покупки/продажи - зависит от поля side)
     public long userID;              // код пользователя внесшего запись
-    public boolean deleted;          // транзакция помечена как удалененная
 
 
     public StockTransaction() {}
 
-    public StockTransaction(long orderID, long productID, int side, int opCode, long quantity, double price) {
+    public StockTransaction(long orderID, long productID, int side, int opCode, long quantity, double unitCost) {
         this.orderID = orderID;
         this.timestamp = System.currentTimeMillis();
         this.productID = productID;
         this.side = side;
         this.operationCode = opCode;
         this.quantity = quantity;
-        this.price = price;
-        this.deleted = false;
+        this.unitCost = unitCost;
     }
 
     public long getTransactionID() {
@@ -105,12 +103,12 @@ public class StockTransaction {
         this.quantity = quantity;
     }
 
-    public double getPrice() {
-        return price;
+    public double getUnitCost() {
+        return unitCost;
     }
 
-    public void setPrice(double price) {
-        this.price = price;
+    public void setUnitCost(double cost) {
+        this.unitCost = cost;
     }
 
     public long getOrderID() {
@@ -129,11 +127,4 @@ public class StockTransaction {
         this.userID = userID;
     }
 
-    public boolean isDeleted() {
-        return deleted;
-    }
-
-    public void setDeleted(boolean deleted) {
-        this.deleted = deleted;
-    }
 }

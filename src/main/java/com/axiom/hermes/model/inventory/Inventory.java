@@ -46,13 +46,13 @@ public class Inventory {
      * Регистрация покупки товара (приход)
      * @param productID код товарной позиции
      * @param quantity количество
-     * @param price цена
+     * @param unitCost цена
      * @return true - если проведена, false - если нет
      */
     @Transactional
-    public StockTransaction purchase(long orderID, long productID, long quantity, double price)
+    public StockTransaction purchase(long orderID, long productID, long quantity, double unitCost)
             throws HermesException {
-        return incomingStock(IN_PURCHASE, orderID, productID, quantity, price);
+        return incomingStock(IN_PURCHASE, orderID, productID, quantity, unitCost);
     }
 
     /**
@@ -71,36 +71,36 @@ public class Inventory {
      * Регистрация возврата товара (приход)
      * @param productID код товарной позиции
      * @param quantity количество
-     * @param price цена
+     * @param unitCost цена
      * @return true - если проведена, false - если нет
      */
     @Transactional
-    public StockTransaction saleReturn(long orderID, long productID, long quantity, double price) throws HermesException {
-        return incomingStock(IN_SALE_RETURN, orderID, productID, quantity, price);
+    public StockTransaction saleReturn(long orderID, long productID, long quantity, double unitCost) throws HermesException {
+        return incomingStock(IN_SALE_RETURN, orderID, productID, quantity, unitCost);
     }
 
     /**
      * Возврат поставщику закупленного товара (расход)
      * @param productID код товарной позиции
      * @param quantity количество
-     * @param price цена
+     * @param unitCost цена
      * @return true - если проведена, false - если нет
      */
     @Transactional
-    public StockTransaction purchaseReturn(long orderID, long productID, long quantity, double price) throws HermesException {
-        return outgoingStock(OUT_PURCHASE_RETURN, orderID, productID, quantity, price);
+    public StockTransaction purchaseReturn(long orderID, long productID, long quantity, double unitCost) throws HermesException {
+        return outgoingStock(OUT_PURCHASE_RETURN, orderID, productID, quantity, unitCost);
     }
 
     /**
      * Списание товара (расход)
      * @param productID код товарной позиции
      * @param quantity количество
-     * @param price цена
+     * @param unitCost цена
      * @return true - если проведена, false - если нет
      */
     @Transactional
-    public StockTransaction writeOff(long orderID, long productID, long quantity, double price) throws HermesException {
-        return outgoingStock(OUT_WRITE_OFF, orderID, productID, quantity, price);
+    public StockTransaction writeOff(long orderID, long productID, long quantity, double unitCost) throws HermesException {
+        return outgoingStock(OUT_WRITE_OFF, orderID, productID, quantity, unitCost);
     }
 
     //-----------------------------------------------------------------------------------------------------
@@ -281,18 +281,18 @@ public class Inventory {
      * @param orderID заказ
      * @param productID продукт
      * @param quantity количество
-     * @param price цена
+     * @param unitCost цена
      * @return сохраненная складская транзакция
      * @throws HermesException информация об ошибке
      */
     @Transactional
-    private StockTransaction incomingStock(int opCode, long orderID, long productID, long quantity, double price)
+    private StockTransaction incomingStock(int opCode, long orderID, long productID, long quantity, double unitCost)
             throws HermesException {
         // Проверяем валидность параметров
         Validator.nonNegativeInteger("orderID", orderID);
         Validator.nonNegativeInteger("productID", productID);
         Validator.nonNegativeInteger("quantity", quantity);
-        Validator.nonNegativeNumber("price", price);
+        Validator.nonNegativeNumber("unitCost", unitCost);
 
         // Обновляем данные позиции заказа если операция возврата товара
         if (opCode== IN_SALE_RETURN) {
@@ -307,7 +307,7 @@ public class Inventory {
         StockTransaction transaction;
         try {
             // Формируем складскую транзакцию
-            transaction = new StockTransaction(orderID, productID, SIDE_IN, opCode, quantity, price);
+            transaction = new StockTransaction(orderID, productID, SIDE_IN, opCode, quantity, unitCost);
             // Проводим складскую транзакцию в журнале складских транзакций
             entityManager.persist(transaction);
             // Обновляем складскую карточку
@@ -329,18 +329,18 @@ public class Inventory {
      * @param orderID заказ
      * @param productID продукт
      * @param quantity количество
-     * @param price цена
+     * @param unitCost цена
      * @return сохраненная складская транзакция
      * @throws HermesException информация об ошибке
      */
     @Transactional
-    private StockTransaction outgoingStock(int opCode, long orderID, long productID, long quantity, double price)
+    private StockTransaction outgoingStock(int opCode, long orderID, long productID, long quantity, double unitCost)
             throws HermesException {
         // Проверяем валидность параметров
         Validator.nonNegativeInteger("orderID", orderID);
         Validator.nonNegativeInteger("productID", productID);
         Validator.nonNegativeInteger("quantity", quantity);
-        Validator.nonNegativeNumber("price", price);
+        Validator.nonNegativeNumber("unitCost", unitCost);
 
         boolean useCommittedStock = false;
         // Если это операции Продажи
@@ -350,10 +350,10 @@ public class Inventory {
                 SalesOrderItem salesOrderItem = salesOrders.addFulfilledQuantity(orderID, productID, quantity);
                 // Если такая позиция заказа есть - устанавливаем флаг продажи с забронированных остатков
                 useCommittedStock = true;                                      // Расходуем с committedStock
-                price = salesOrderItem.getPrice();                             // Берем цену из самого заказа
+                unitCost = salesOrderItem.getUnitPrice();                               // Берем цену из самого заказа
             } catch (HermesException exception) {
                 if (exception.getStatus()== NOT_FOUND) {                       // Если такой позиции заказа нет
-                    price = catalogue.getProduct(productID).getPrice();        // Берём цену из каталога
+                    unitCost = catalogue.getProduct(productID).getUnitPrice();     // Берём цену из каталога
                     useCommittedStock = false;                                 // Расходуем с availableForSale
                 } else throw exception;                                        // Если что-то другое кидаем ошибку
             }
@@ -363,7 +363,7 @@ public class Inventory {
 
         try {
             // Формируем новую транзакцию
-            transaction = new StockTransaction(orderID, productID, SIDE_OUT, opCode, quantity, price);
+            transaction = new StockTransaction(orderID, productID, SIDE_OUT, opCode, quantity, unitCost);
             // Проводим складскую транзакцию в журнале складских транзакций
             entityManager.persist(transaction);
             // Обновляем складскую карточку

@@ -285,14 +285,14 @@ public class SalesOrders {
             // Есть ли позиция по такому продукту в этом заказе
             item = getOrderItem(orderID, productID);
             // Если такая позиция заказа есть - суммируем количество текущее и новое
-            long totalQuantity = item.getquantity() + quantity;
+            long totalQuantity = item.getQuantity() + quantity;
             item.setQuantity(totalQuantity);
             // Обновляем на текущую цену
-            item.setPrice(product.getPrice());
+            item.setUnitPrice(product.getUnitPrice());
         } catch (HermesException exception) {
             // Если такой позиции заказа нет - создаем новую
             if (exception.getStatus()== NOT_FOUND) {
-                item = new SalesOrderItem(orderID, productID, quantity, product.getPrice());
+                item = new SalesOrderItem(orderID, productID, quantity, product.getUnitPrice());
             } else {
                 // Если произошла какая-то другая ошибка
                 throw exception;
@@ -345,7 +345,7 @@ public class SalesOrders {
             if (product==null || !product.isAvailable()) return null;
             managedItem.setProductID(productID);
             // Цену товарной позиции берем из каталога
-            managedItem.setPrice(product.getPrice());
+            managedItem.setUnitPrice(product.getUnitPrice());
         }
 
         try {

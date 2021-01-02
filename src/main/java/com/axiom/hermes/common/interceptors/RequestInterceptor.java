@@ -1,5 +1,7 @@
 package com.axiom.hermes.common.interceptors;
 
+import io.vertx.core.Handler;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import org.jboss.logging.Logger;
 
