@@ -5,7 +5,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 
 /**
- * Изображение с миниатюрой
+ * Изображение товара с миниатюрой
  */
 @Entity
 public class ProductImage {
