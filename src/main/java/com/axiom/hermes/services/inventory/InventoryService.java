@@ -11,6 +11,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
 
+// todo Передалать GET методы создания транзакций на POST
+
 /**
  * Сервис управления складским учетом
  */
@@ -59,8 +61,8 @@ public class InventoryService {
      * @param productID товара
      * @param quantity количества
      * @param price цена единицы
-     * @return
-     * @throws HermesException
+     * @return проведенная транзакция
+     * @throws HermesException информация об ошибке
      */
     @GET
     @Path("/purchase")
@@ -129,7 +131,7 @@ public class InventoryService {
 
 
     /**
-     * Проводка - списание товара с учёта
+     * Проводка - списание товара
      * @param orderID не используется
      * @param productID товара
      * @param quantity количество

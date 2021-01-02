@@ -154,11 +154,9 @@ public class SalesOrdersServiceTest {
     @Test
     @Order(7)
     public void changeOrderStatus() {
-        // todo body
-        String bdy = "{\"orderID\":" + addedOrderID + ",\"status\":2 }";
         given()
               .contentType("application/json")
-              .body(bdy).
+              .body("{\"orderID\":" + addedOrderID + ",\"status\":2 }").
         when().put("/salesOrders/changeStatus").
         then().statusCode(200).assertThat()
                 .body("orderID", equalTo(addedOrderID))       // Проверяем что orderID > 0

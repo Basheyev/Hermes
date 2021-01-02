@@ -63,7 +63,7 @@ public class SalesOrdersService {
      * @throws HermesException информация об ошибке
      */
     @GET
-    @Path("/addOrder")
+    @Path("/addOrder") // todo здесь должен быть POST
     public Response addOrder(@QueryParam("customerID") long customerID) throws HermesException {
         SalesOrder order = salesOrders.addOrder(customerID);
         return Response.ok(order).build();
@@ -163,7 +163,7 @@ public class SalesOrdersService {
      * @throws HermesException информация об ошибке
      */
     @PUT
-    @Path("/updateOrderItem") // todo сменить имя Entry на Item
+    @Path("/updateOrderItem")
     public Response updateOrderItem(SalesOrderItem item) throws HermesException {
         SalesOrderItem entry = salesOrders.updateOrderItem(item.getItemID(), item.getProductID(), item.getquantity());
         return Response.ok(entry).build();
