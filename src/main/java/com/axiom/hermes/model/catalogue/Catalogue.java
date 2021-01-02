@@ -2,6 +2,8 @@ package com.axiom.hermes.model.catalogue;
 
 import com.axiom.hermes.common.exceptions.HermesException;
 import com.axiom.hermes.common.validation.Validator;
+import com.axiom.hermes.model.catalogue.entities.Collection;
+import com.axiom.hermes.model.catalogue.entities.CollectionItem;
 import com.axiom.hermes.model.catalogue.entities.Product;
 import com.axiom.hermes.model.catalogue.entities.ProductImage;
 import com.axiom.hermes.model.inventory.Inventory;
@@ -17,7 +19,6 @@ import java.util.List;
 
 import static com.axiom.hermes.common.exceptions.HermesException.*;
 
-// TODO Добавить управление коллекциями
 
 /**
  * Каталог товаров
@@ -32,35 +33,52 @@ public class Catalogue {
 
     public Catalogue() { }
 
+    //--------------------------------------------------------------------------------------------------------
+    // Управление товарами
+    //--------------------------------------------------------------------------------------------------------
+
     /**
      * Возвращает весь список доступных для заказа позиций каталога товаров
      * @return список карточек товарных позиций
+     * @throws HermesException информация об ошибке
      */
     @Transactional
-    public List<Product> getAvailableProducts() {
+    public List<Product> getAvailableProducts() throws HermesException {
         List<Product> availableProducts;
         String query = "SELECT a FROM Product a WHERE a.available=TRUE";
-        availableProducts = entityManager.createQuery(query, Product.class).getResultList();
+        try {
+            availableProducts = entityManager.createQuery(query, Product.class).getResultList();
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            throw new HermesException(INTERNAL_SERVER_ERROR, "Internal Server Error", e.getMessage());
+        }
         return availableProducts;
     }
 
     /**
      * Возвращает весь список позиций каталога товаров (включая недоступные для заказа)
      * @return список карточек товарных позиций
+     * @throws HermesException информация об ошибке
      */
     @Transactional
-    public List<Product> getAllProducts() {
+    public List<Product> getAllProducts() throws HermesException {
         List<Product> allProducts;
         String query = "SELECT a FROM Product a";
-        allProducts = entityManager.createQuery(query, Product.class).getResultList();
+        // todo try catch
+        try {
+            allProducts = entityManager.createQuery(query, Product.class).getResultList();
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            throw new HermesException(INTERNAL_SERVER_ERROR, "Internal Server Error", e.getMessage());
+        }
         return allProducts;
     }
-
 
     /**
      * Возвращает карточку товарной позиции по указаному ID
      * @param productID товарной позиции
      * @return карточка товарной позиции
+     * @throws HermesException информация об ошибке
      */
     @Transactional
     public Product getProduct(long productID) throws HermesException {
@@ -78,6 +96,7 @@ public class Catalogue {
      * Добавляет новую карточку товарной позиции
      * @param product новая карточка товарной позиации
      * @return сохраненная карточка товарной позиции или null если такой ID уже есть
+     * @throws HermesException информация об ошибке
      */
     @Transactional
     public Product addProduct(Product product) throws HermesException {
@@ -110,6 +129,7 @@ public class Catalogue {
      * Обновляет карточку товарной позиации
      * @param product карточка товарной позиции
      * @return обновляет карточку товарной позиации или создает новую
+     * @throws HermesException информация об ошибке
      */
     @Transactional
     public Product updateProduct(Product product) throws HermesException {
@@ -142,6 +162,7 @@ public class Catalogue {
     /**
      * Удаляет товарную позицию если с ней не связано заказов и транзакций
      * @param productID товарной позиции
+     * @throws HermesException информация об ошибке
      */
     @Transactional
     public void removeProduct(long productID) throws HermesException {
@@ -180,6 +201,7 @@ public class Catalogue {
     /**
      * Загружает изображение товарной позиции
      * @param productImage изображение товарной позиции
+     * @throws HermesException информация об ошибке
      */
     @Transactional
     public void uploadImage(ProductImage productImage) throws HermesException {
@@ -205,6 +227,7 @@ public class Catalogue {
      * Загружает миниатюрное изображение товарной позиции вписанное в 128x128 (до 10Kb)
      * @param productID товарной позиации
      * @return JPEG с миниатюрным изображением
+     * @throws HermesException информация об ошибке
      */
     @Transactional
     public byte[] getProductThumbnail(long productID) throws HermesException {
@@ -219,6 +242,12 @@ public class Catalogue {
         }
     }
 
+    /**
+     * Возвращает изображение товара
+     * @param productID товара
+     * @return изображение товара
+     * @throws HermesException информация об ошибке
+     */
     @Transactional
     public ProductImage getProductImage(long productID) throws HermesException {
         Validator.nonNegativeInteger("productID", productID);
@@ -232,6 +261,40 @@ public class Catalogue {
         }
     }
 
+    //--------------------------------------------------------------------------------------------------------
+    // Управление коллекциями // TODO Добавить управление коллекциями
+    //--------------------------------------------------------------------------------------------------------
 
+    public List<Collection> getCollections() {
+        return null;
+    }
+
+    public Collection addCollection(Collection collection) {
+        return null;
+    }
+
+    public Collection updateCollection(Collection collection) {
+        return null;
+    }
+
+    public void removeCollection(long collectionID) {
+
+    }
+
+    public List<CollectionItem> getCollectionItems() {
+        return null;
+    }
+
+    public CollectionItem addCollectionItem() {
+        return null;
+    }
+
+    public CollectionItem updateCollectionItem() {
+        return null;
+    }
+
+    public void removeCollectionItem(long collectionItemID) {
+
+    }
 
 }

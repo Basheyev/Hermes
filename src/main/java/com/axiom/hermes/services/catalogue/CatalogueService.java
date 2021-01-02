@@ -45,9 +45,10 @@ public class CatalogueService {
     /**
      * Предоставляет перечень всех доступных для заказа товарных позиций
      * @return список товарных позиций
+     * @throws HermesException информация об ошибке
      */
     @GET
-    public Response getAvailableProducts() {
+    public Response getAvailableProducts() throws HermesException  {
         List<Product> availableProducts = catalogue.getAvailableProducts();
         if (availableProducts==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(availableProducts).build();
@@ -56,10 +57,11 @@ public class CatalogueService {
     /**
      * Предоставляет полный перчень товарных позиций, включая недоступные для заказа
      * @return список товарных позиций
+     * @throws HermesException информация об ошибке
      */
     @GET
     @Path("/getAllProducts")
-    public Response getAllProducts() {
+    public Response getAllProducts() throws HermesException  {
         List<Product> allProducts = catalogue.getAllProducts();
         if (allProducts==null) return Response.status(Response.Status.NOT_FOUND).build();
         return Response.ok(allProducts).build();
@@ -69,6 +71,7 @@ public class CatalogueService {
      * Возвращает информацию по товарной позици по указнному ID
      * @param productID товарной позиции
      * @return информация товарной позиции
+     * @throws HermesException информация об ошибке
      */
     @GET
     @Path("/getProduct")
@@ -81,6 +84,7 @@ public class CatalogueService {
      * Добавляет в каталог новую товарную позицию
      * @param newProduct информация о товарной позиции
      * @return добавленная товарная позиция или Null если уже есть
+     * @throws HermesException информация об ошибке
      */
     @POST
     @Path("/addProduct")
@@ -93,6 +97,7 @@ public class CatalogueService {
      * Обновляет в каталог информацию о товарной позиции
      * @param product информация о товарной позиции
      * @return обновленная или добавленная товарная позиация
+     * @throws HermesException информация об ошибке
      */
     @PUT
     @Path("/updateProduct")
@@ -101,6 +106,12 @@ public class CatalogueService {
         return Response.ok(managed).build();
     }
 
+    /**
+     * Удаляет продукт, если он нигде не используется
+     * @param productID товара
+     * @return 200 ОК
+     * @throws HermesException информация об ошибке
+     */
     @DELETE
     @Path("/removeProduct")
     public Response removeProduct(@QueryParam("productID") long productID) throws HermesException {
@@ -112,6 +123,7 @@ public class CatalogueService {
      * Возвращает миниатюру изображения вписанную в размер 128x128
      * @param productID товарной позиции
      * @return изображение миниатюры (image/jpeg)
+     * @throws HermesException информация об ошибке
      */
     @GET
     @Path("/downloadThumbnail")
@@ -128,6 +140,7 @@ public class CatalogueService {
      * Возвращает полноразмерное изображение товара
      * @param productID товарной позиции
      * @return полноразмерное изображение (image/jpeg)
+     * @throws HermesException информация об ошибке
      */
     @GET
     @Path("/downloadImage")
@@ -145,7 +158,8 @@ public class CatalogueService {
     /**
      * Загружает/заменяет изображение товарной позиции (multipart/form-data)
      * @param dataInput форма содержащая: productID - товарная позиция, file - файл изображения (image/jpeg)
-     * @return Status 200 - если ок
+     * @return 200 ОК
+     * @throws HermesException информация об ошибке
      */
     @POST
     @Path("/uploadImage")
@@ -221,6 +235,7 @@ public class CatalogueService {
      * Получить из поля формы значение поля productID
      * @param productInputParts заголовок части формы
      * @return productID товарной позиции
+     * @throws HermesException информация об ошибке
      */
     private long parseProductID(List<InputPart> productInputParts) throws HermesException {
         long productID = INVALID;
@@ -241,6 +256,7 @@ public class CatalogueService {
      * Получает из заголовка части многосоставной формы имя файла изображения
      * @param header заголовок части многосоставной формы
      * @return имя файла или "unknown" если не найдено
+     * @throws HermesException информация об ошибке
      */
     private String parseFileName(MultivaluedMap<String, String> header) {
         String[] contentDisposition = header.getFirst("Content-Disposition").split(";");
