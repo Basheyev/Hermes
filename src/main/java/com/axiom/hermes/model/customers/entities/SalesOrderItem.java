@@ -12,7 +12,7 @@ import javax.persistence.*;
 })
 public class SalesOrderItem {
     @Id @GeneratedValue
-    private long entryID;                    // Счётчик позиции
+    private long itemID;                    // Счётчик позиции
     private long orderID;                    // Код заказа
     private long productID;                  // Товарная позиция
     private long quantity;                     // Количество заказанного товара
@@ -28,12 +28,12 @@ public class SalesOrderItem {
         this.price = price;
     }
 
-    public long getEntryID() {
-        return entryID;
+    public long getItemID() {
+        return itemID;
     }
 
-    public void setEntryID(long entryID) {
-        this.entryID = entryID;
+    public void setItemID(long itemID) {
+        this.itemID = itemID;
     }
 
     public long getOrderID() {

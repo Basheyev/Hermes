@@ -18,6 +18,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.LockModeType;
+import javax.persistence.TypedQuery;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 import javax.transaction.Transactional;
@@ -28,6 +29,8 @@ import java.util.List;
  */
 @ApplicationScoped
 public class Inventory {
+
+    public static final int MAX_RESULTS = 256;
 
     @Inject EntityManager entityManager;
     @Inject TransactionManager transactionManager;
@@ -145,9 +148,10 @@ public class Inventory {
         if (startTime>0 || endTime > 0) {
             query += " WHERE a.timestamp BETWEEN " + startTime + " AND " + endTime;
         }
-        // fixme добавить лимит выборки 200 позиций
+
         try {
-            productTransactions = entityManager.createQuery(query, StockTransaction.class).getResultList();
+            TypedQuery<StockTransaction> tq = entityManager.createQuery(query, StockTransaction.class);
+            productTransactions = tq.setMaxResults(MAX_RESULTS).getResultList();
         } catch (RuntimeException exception) {
             exception.printStackTrace();
             throw new HermesException(INTERNAL_SERVER_ERROR, "Query failed", exception.getMessage());

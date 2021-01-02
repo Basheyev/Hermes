@@ -84,16 +84,14 @@ public class SalesOrdersService {
 
     /**
      * Изменить статус заказа
-     * @param orderID заказа
-     * @param status новый статус
+     * @param salesOrder заказ с новым статусом
      * @return обновленная карточка заказа
      * @throws HermesException информация об ошибке
      */
     @PUT
     @Path("/changeStatus")
-    public Response changeStatus(@QueryParam("orderID") long orderID, @QueryParam("status") int status)
-        throws HermesException {
-        SalesOrder order = salesOrders.changeStatus(orderID, status);
+    public Response changeStatus(SalesOrder salesOrder) throws HermesException {
+        SalesOrder order = salesOrders.changeStatus(salesOrder.getOrderID(), salesOrder.getStatus());
         return Response.ok(order).build();
     }
 
@@ -121,22 +119,22 @@ public class SalesOrdersService {
      * @throws HermesException информация об ошибке
      */
     @GET
-    @Path("/getOrderEntries")
-    public Response getOrderEntries(@QueryParam("orderID") long orderID) throws HermesException {
-        List<SalesOrderItem> entries = salesOrders.getOrderEntries(orderID);
+    @Path("/getOrderItems")
+    public Response getOrderItems(@QueryParam("orderID") long orderID) throws HermesException {
+        List<SalesOrderItem> entries = salesOrders.getOrderItems(orderID);
         return Response.ok(entries).build();
     }
 
     /**
      * Получить позицию заказа по ID позиции
-     * @param entryID позиции заказа
+     * @param itemID позиции заказа
      * @return позиция заказа
      * @throws HermesException информация об ошибке
      */
     @GET
-    @Path("/getOrderEntry")
-    public Response getOrderEntry(@QueryParam("entryID") long entryID) throws HermesException {
-        SalesOrderItem entry = salesOrders.getOrderEntry(entryID);
+    @Path("/getOrderItem")
+    public Response getOrderItem(@QueryParam("itemID") long itemID) throws HermesException {
+        SalesOrderItem entry = salesOrders.getOrderItem(itemID);
         return Response.ok(entry).build();
     }
 
@@ -149,43 +147,38 @@ public class SalesOrdersService {
      * @throws HermesException информация об ошибке
      */
     @GET
-    @Path("/addOrderEntry")
-    public Response addOrderEntry(
+    @Path("/addOrderItem") // todo тут должен быть POST
+    public Response addOrderItem(
             @QueryParam("orderID") long orderID,
             @QueryParam("productID") long productID,
             @QueryParam("quantity") long quantity) throws HermesException {
-        SalesOrderItem entry = salesOrders.addOrderEntry(orderID, productID, quantity);
+        SalesOrderItem entry = salesOrders.addOrderItem(orderID, productID, quantity);
         return Response.ok(entry).build();
     }
 
     /**
      * Обновляет позицию закза (код товара и/или количество)
-     * @param entryID позиции заказа
-     * @param newProductID новый код товара
-     * @param newQuantity новое количество товара
+     * @param item измененная позиция заказа
      * @return обновленная позиция заказа
      * @throws HermesException информация об ошибке
      */
     @PUT
-    @Path("/updateOrderEntry")
-    public Response updateOrderEntry(
-            @QueryParam("entryID") long entryID,
-            @QueryParam("productID") long newProductID,
-            @QueryParam("quantity") long newQuantity) throws HermesException {
-        SalesOrderItem entry = salesOrders.updateOrderEntry(entryID, newProductID, newQuantity);
+    @Path("/updateOrderItem") // todo сменить имя Entry на Item
+    public Response updateOrderItem(SalesOrderItem item) throws HermesException {
+        SalesOrderItem entry = salesOrders.updateOrderItem(item.getItemID(), item.getProductID(), item.getquantity());
         return Response.ok(entry).build();
     }
 
     /**
      * Удаляет позиции заказа
-     * @param entryID позиции заказа
+     * @param itemID позиции заказа
      * @return 200 ОК если удалена успешно
      * @throws HermesException информация об ошибке
      */
     @DELETE
-    @Path("/removeOrderEntry")
-    public Response removeOrderEntry(@QueryParam("entryID") long entryID) throws HermesException {
-        salesOrders.removeOrderEntry(entryID);
+    @Path("/removeOrderItem")
+    public Response removeOrderItem(@QueryParam("itemID") long itemID) throws HermesException {
+        salesOrders.removeOrderItem(itemID);
         return Response.ok().build();
     }
 

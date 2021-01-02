@@ -24,7 +24,7 @@ public class SalesOrdersServiceTest {
     private static int customerID;
     private static int productID;
     private static int addedOrderID;
-    private static int addedEntryID;
+    private static int addedItemID;
 
     //---------------------------------------------------------------------------------------------------
 
@@ -116,24 +116,24 @@ public class SalesOrdersServiceTest {
 
     @Test
     @Order(4)
-    public void addOrderEntry() {
-        addedEntryID =
+    public void addOrderItem() {
+        addedItemID =
         given().
-        when().get("/salesOrders/addOrderEntry?orderID=" + addedOrderID +
+        when().get("/salesOrders/addOrderItem?orderID=" + addedOrderID +
                 "&productID=" + productID + "&quantity=12").
         then().statusCode(200).assertThat()
                 .body("productID", equalTo(productID))
                 .body("quantity", equalTo(12))
-                .extract().path("entryID");
+                .extract().path("itemID");
     }
 
     //---------------------------------------------------------------------------------------------------
 
     @Test
     @Order(5)
-    public void getOrderEntry() {
+    public void getOrderItem() {
         given().
-        when().get("/salesOrders/getOrderEntry?entryID=" + addedEntryID).
+        when().get("/salesOrders/getOrderItem?itemID=" + addedItemID).
               then().statusCode(200).assertThat()
               .body("productID", equalTo(productID))
               .body("quantity", equalTo(12));
@@ -143,9 +143,9 @@ public class SalesOrdersServiceTest {
 
     @Test
     @Order(6)
-    public void removeOrderEntries() {
+    public void removeOrderItems() {
         given().
-        when().delete("/salesOrders/removeOrderEntry?entryID=" + addedEntryID).
+        when().delete("/salesOrders/removeOrderItem?itemID=" + addedItemID).
         then().statusCode(200);
     }
 
@@ -154,13 +154,20 @@ public class SalesOrdersServiceTest {
     @Test
     @Order(7)
     public void changeOrderStatus() {
-        given().
-        when().put("/salesOrders/changeStatus?orderID=" + addedOrderID + "&status=2").
+        // todo body
+        String bdy = "{\"orderID\":" + addedOrderID + ",\"status\":2 }";
+        given()
+              .contentType("application/json")
+              .body(bdy).
+        when().put("/salesOrders/changeStatus").
         then().statusCode(200).assertThat()
                 .body("orderID", equalTo(addedOrderID))       // Проверяем что orderID > 0
                 .body("status", equalTo(2));           // Проверям что status=1 (новый заказ)
-        given().
-                when().put("/salesOrders/changeStatus?orderID=" + addedOrderID + "&status=1").
+
+        given()
+              .contentType("application/json")
+              .body("{\"orderID\":" + addedOrderID + ",\"status\":1 }").
+                when().put("/salesOrders/changeStatus").
                 then().statusCode(200).assertThat()
                 .body("orderID", equalTo(addedOrderID))       // Проверяем что orderID > 0
                 .body("status", equalTo(1));           // Проверям что status=1 (новый заказ)

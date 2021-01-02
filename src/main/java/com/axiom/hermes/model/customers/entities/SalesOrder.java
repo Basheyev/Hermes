@@ -33,7 +33,7 @@ public class SalesOrder {
     @Id
     @GeneratedValue
     private long orderID;                    // Код заказа
-    private long customerID;                  // Код клиента
+    private long customerID;                 // Код клиента
     private long orderTime;                  // Время создания заказа
     private int status;                      // Статус заказа
     private long timestamp;                  // Время изменения заказа

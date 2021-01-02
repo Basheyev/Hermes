@@ -12,23 +12,23 @@ import java.io.IOException;
 
 @Provider
 public class RequestInterceptor implements ContainerRequestFilter {
-/*
+
     private static final Logger LOG = Logger.getLogger(RequestInterceptor.class);
 
     @Context
     UriInfo info;
 
     @Context
-    HttpServerRequest request;*/
+    HttpServerRequest request;
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
 
-       /* final String method = requestContext.getMethod();
+        final String method = requestContext.getMethod();
         final String path = info.getPath();
         final String address = request.remoteAddress().toString();
 
-        LOG.infof("Request %s %s from IP %s", method, path, address);*/
+        LOG.infof("Request %s %s from IP %s", method, path, address);
     }
 
 }

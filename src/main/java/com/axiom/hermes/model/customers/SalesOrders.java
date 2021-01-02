@@ -146,9 +146,9 @@ public class SalesOrders {
             entityManager.persist(salesOrder);
             // Статус заказа может как бронировать, так и разбронировать товарные позиции, потому
             // Пересчитываем забронированные остатки в складских карточкаъ для каждой позиции заказа
-            List<SalesOrderItem> entries = getOrderEntries(orderID);
-            for (SalesOrderItem entry : entries) {
-                inventory.updateCommittedStock(entry.getProductID());
+            List<SalesOrderItem> items = getOrderItems(orderID);
+            for (SalesOrderItem item : items) {
+                inventory.updateCommittedStock(item.getProductID());
             }
         } catch (HermesException exception) {
             try {
@@ -201,7 +201,7 @@ public class SalesOrders {
      * @return список позиций заказа
      */
     @Transactional
-    public List<SalesOrderItem> getOrderEntries(long orderID) throws HermesException {
+    public List<SalesOrderItem> getOrderItems(long orderID) throws HermesException {
         Validator.nonNegativeInteger("orderID", orderID);
         List<SalesOrderItem> orderEntries;
         String query = "SELECT a FROM SalesOrderItem a WHERE a.orderID=" + orderID;
@@ -211,20 +211,20 @@ public class SalesOrders {
 
     /**
      * Получить позицию заказа
-     * @param entryID позиции
+     * @param itemID позиции
      * @return позиция заказа
      */
     @Transactional
-    public SalesOrderItem getOrderEntry(long entryID) throws HermesException {
-        Validator.nonNegativeInteger("entryID", entryID);
-        SalesOrderItem entry = entityManager.find(SalesOrderItem.class, entryID);
+    public SalesOrderItem getOrderItem(long itemID) throws HermesException {
+        Validator.nonNegativeInteger("itemID", itemID);
+        SalesOrderItem item = entityManager.find(SalesOrderItem.class, itemID);
 
-        if (entry==null) {
-            throw new HermesException(NOT_FOUND, "Sales order entry not found",
-                    "Sales order entry where entryID=" + entryID + " not found.");
+        if (item==null) {
+            throw new HermesException(NOT_FOUND, "Sales order item not found",
+                    "Sales order item where itemID=" + itemID + " not found.");
         }
 
-        return entry;
+        return item;
     }
 
     /**
@@ -234,22 +234,22 @@ public class SalesOrders {
      * @return позиция заказа
      */
     @Transactional
-    public SalesOrderItem getOrderEntry(long orderID, long productID) throws HermesException {
+    public SalesOrderItem getOrderItem(long orderID, long productID) throws HermesException {
         Validator.nonNegativeInteger("orderID", orderID);
         Validator.nonNegativeInteger("productID", productID);
-        SalesOrderItem entry;
+        SalesOrderItem item;
         String query =
                 "SELECT a FROM SalesOrderItem a " +
                 "WHERE a.orderID=" + orderID + " AND a.productID=" + productID;
         try {
-            entry = entityManager.createQuery(query, SalesOrderItem.class).getSingleResult();
+            item = entityManager.createQuery(query, SalesOrderItem.class).getSingleResult();
         } catch (NoResultException e) {
-            throw new HermesException(NOT_FOUND, "Sales order entry not found",
-                    "Sales order entry where orderID=" + orderID + " productID=" + productID + " not found.");
+            throw new HermesException(NOT_FOUND, "Sales order item not found",
+                    "Sales order item where orderID=" + orderID + " productID=" + productID + " not found.");
         } catch (PersistenceException e) {
             throw new HermesException(INTERNAL_SERVER_ERROR, "Internal Server Error", e.getMessage());
         }
-        return entry;
+        return item;
     }
 
     /**
@@ -260,7 +260,7 @@ public class SalesOrders {
      * @return данные позиции заказа
      */
     @Transactional
-    public SalesOrderItem addOrderEntry(long orderID, long productID, long quantity) throws HermesException {
+    public SalesOrderItem addOrderItem(long orderID, long productID, long quantity) throws HermesException {
         Validator.nonNegativeInteger("orderID", orderID);
         Validator.nonNegativeInteger("productID", productID);
         Validator.nonNegativeInteger("quantity", quantity);
@@ -269,30 +269,30 @@ public class SalesOrders {
 
         // Если заказ уже изменять нельзя уходим
         if (salesOrder.getStatus() >= SalesOrder.CHANGEABLE_BEFORE)
-            throw new HermesException(FORBIDDEN, "Cannot add sales order entry",
-                    "Cannot add sales order entry, because sales order status=" +
+            throw new HermesException(FORBIDDEN, "Cannot add sales order item",
+                    "Cannot add sales order item, because sales order status=" +
                             salesOrder.getStatus() + " and its not changeable.");
 
         // Если такая товарная позиция недоступна для заказа
         Product product = catalogue.getProduct(productID);
         if (!product.isAvailable()) {
-            throw new HermesException(FORBIDDEN, "Cannot add sales order entry",
+            throw new HermesException(FORBIDDEN, "Cannot add sales order item",
                     "Product status=" + productID + " is not available.");
         }
 
-        SalesOrderItem entry;
+        SalesOrderItem item;
         try {
             // Есть ли позиция по такому продукту в этом заказе
-            entry = getOrderEntry(orderID, productID);
+            item = getOrderItem(orderID, productID);
             // Если такая позиция заказа есть - суммируем количество текущее и новое
-            long totalQuantity = entry.getquantity() + quantity;
-            entry.setQuantity(totalQuantity);
+            long totalQuantity = item.getquantity() + quantity;
+            item.setQuantity(totalQuantity);
             // Обновляем на текущую цену
-            entry.setPrice(product.getPrice());
+            item.setPrice(product.getPrice());
         } catch (HermesException exception) {
             // Если такой позиции заказа нет - создаем новую
             if (exception.getStatus()== NOT_FOUND) {
-                entry = new SalesOrderItem(orderID, productID, quantity, product.getPrice());
+                item = new SalesOrderItem(orderID, productID, quantity, product.getPrice());
             } else {
                 // Если произошла какая-то другая ошибка
                 throw exception;
@@ -301,7 +301,7 @@ public class SalesOrders {
 
         try {
             // Сохраняем позицию заказа
-            entityManager.persist(entry);
+            entityManager.persist(item);
             // Обновить временную метку последнего изменения заказа
             salesOrder.setTimestamp(System.currentTimeMillis());
             entityManager.persist(salesOrder);
@@ -314,44 +314,44 @@ public class SalesOrders {
             throw exception;
         }
 
-        return entry;
+        return item;
     }
 
     /**
      * Изменение данных позиции заказа
-     * @param entryID позиции заказа
+     * @param itemID позиции заказа
      * @param productID новый код товара
      * @param quantity новое количество
      * @return обновленная позиция заказа
      */
     @Transactional
-    public SalesOrderItem updateOrderEntry(long entryID, long productID, long quantity) throws HermesException {
-        Validator.nonNegativeInteger("entryID", entryID);
+    public SalesOrderItem updateOrderItem(long itemID, long productID, long quantity) throws HermesException {
+        Validator.nonNegativeInteger("itemID", itemID);
         Validator.nonNegativeInteger("productID", productID);
         Validator.nonNegativeInteger("quantity", quantity);
 
         // Если такая позиция не найдена
-        SalesOrderItem managedEntry = getOrderEntry(entryID);
+        SalesOrderItem managedItem = getOrderItem(itemID);
         // Если заказ уже изменять нельзя уходим
-        SalesOrder salesOrder = getOrder(managedEntry.getOrderID());
+        SalesOrder salesOrder = getOrder(managedItem.getOrderID());
         if (salesOrder.getStatus() >= SalesOrder.CHANGEABLE_BEFORE)
-            throw new HermesException(FORBIDDEN, "Cannot update sales order entry",
-                    "Cannot update sales order entry, because sales order status=" +
+            throw new HermesException(FORBIDDEN, "Cannot update sales order item",
+                    "Cannot update sales order item, because sales order status=" +
                             salesOrder.getStatus() + " and its not changeable.");
 
         // Если изменился код товара
-        if (managedEntry.getProductID() != productID) {
+        if (managedItem.getProductID() != productID) {
             Product product = catalogue.getProduct(productID);
             if (product==null || !product.isAvailable()) return null;
-            managedEntry.setProductID(productID);
+            managedItem.setProductID(productID);
             // Цену товарной позиции берем из каталога
-            managedEntry.setPrice(product.getPrice());
+            managedItem.setPrice(product.getPrice());
         }
 
         try {
             // Обновляем позицию заказа
-            managedEntry.setQuantity(quantity);
-            entityManager.persist(managedEntry);
+            managedItem.setQuantity(quantity);
+            entityManager.persist(managedItem);
             // Обновить временную метку последнего изменения заказа
             salesOrder.setTimestamp(System.currentTimeMillis());
             entityManager.persist(salesOrder);
@@ -363,7 +363,7 @@ public class SalesOrders {
             }
             throw exception;
         }
-        return managedEntry;
+        return managedItem;
     }
 
     /**
@@ -379,7 +379,7 @@ public class SalesOrders {
         Validator.nonNegativeInteger("productID", productID);
         Validator.nonNegativeInteger("fulfilledQuantity", fulfilledQuantity);
         // Ищем позицию заказа и специально не обрабатываем исключение для передачи дальше
-        SalesOrderItem salesOrderItem = getOrderEntry(orderID, productID);
+        SalesOrderItem salesOrderItem = getOrderItem(orderID, productID);
         long newFulfilledQuantity = salesOrderItem.getFulfilledQuantity() + fulfilledQuantity;
         salesOrderItem.setFulfilledQuantity(newFulfilledQuantity);
         entityManager.persist(salesOrderItem);
@@ -400,7 +400,7 @@ public class SalesOrders {
         SalesOrderItem salesOrderItem;
         // Ищем позицию заказа если она есть
         try {
-            salesOrderItem = getOrderEntry(orderID, productID);
+            salesOrderItem = getOrderItem(orderID, productID);
         } catch (HermesException exception) {
             // Если не нашли - ничего не делаем и уходим
             if (exception.getStatus() == NOT_FOUND) return;
@@ -416,24 +416,24 @@ public class SalesOrders {
 
     /**
      * Удалить позицию заказа
-     * @param entryID позиции заказа
+     * @param itemID позиции заказа
      */
     @Transactional
-    public void removeOrderEntry(long entryID) throws HermesException {
-        Validator.nonNegativeInteger("entryID", entryID);
+    public void removeOrderItem(long itemID) throws HermesException {
+        Validator.nonNegativeInteger("itemID", itemID);
 
-        SalesOrderItem managedEntry = getOrderEntry(entryID);
+        SalesOrderItem managedItem = getOrderItem(itemID);
 
         // Если заказ уже изменять нельзя уходим
-        SalesOrder salesOrder = getOrder(managedEntry.getOrderID());
+        SalesOrder salesOrder = getOrder(managedItem.getOrderID());
         if (salesOrder.getStatus() >= SalesOrder.CHANGEABLE_BEFORE)
-            throw new HermesException(FORBIDDEN, "Cannot remove sales order entry",
-                    "Cannot remove sales order entry, because sales order status=" +
+            throw new HermesException(FORBIDDEN, "Cannot remove sales order item",
+                    "Cannot remove sales order item, because sales order status=" +
                             salesOrder.getStatus() + " and its not changeable.");
 
         try {
             // Удаляем позицию заказа
-            entityManager.remove(managedEntry);
+            entityManager.remove(managedItem);
             // Обновить временную метку последнего изменения заказа
             salesOrder.setTimestamp(System.currentTimeMillis());
             entityManager.persist(salesOrder);

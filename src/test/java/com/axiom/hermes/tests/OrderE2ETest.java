@@ -148,26 +148,32 @@ public class OrderE2ETest {
 
     @Test
     @Order(5)
-    public void addOrderEntries() {
-        int addedEntryID = given().
-                when().get("/salesOrders/addOrderEntry?orderID=" + orderID +
+    public void addOrderItems() {
+        int addedItemID = given().
+                when().get("/salesOrders/addOrderItem?orderID=" + orderID +
                 "&productID=" + productID + "&quantity=13").
                 then().statusCode(200).assertThat()
                 .body("productID", equalTo(productID))
                 .body("quantity", equalTo(13))
-                .extract().path("entryID");
+                .extract().path("itemID");
 
-        LOG.info("OrderID=" + orderID + " entry added: " + addedEntryID);
+        LOG.info("OrderID=" + orderID + " item added: " + addedItemID);
 
-        int quantity = given().
-                when().put("/salesOrders/updateOrderEntry?entryID=" + addedEntryID +
-                "&productID=" + productID + "&quantity=" + buyQuantity).
+        String updateItemJson = "{\n" +
+                "\"itemID\": " + addedItemID + ",\n" +
+                "\"productID\":" + productID + ",\n" +
+                "\"quantity\":" + buyQuantity + "\n" + "}";
+        int quantity =
+                given()
+                    .contentType("application/json")
+                    .body(updateItemJson).
+                when().put("/salesOrders/updateOrderItem").
                 then().statusCode(200).assertThat()
                     .body("productID", equalTo(productID))
                     .body("quantity", equalTo(buyQuantity))
                 .extract().path("quantity");
 
-        LOG.info("OrderID=" + orderID + " entry updated: " + addedEntryID + " quantity=" + quantity);
+        LOG.info("OrderID=" + orderID + " item updated: " + addedItemID + " quantity=" + quantity);
     }
 
     //---------------------------------------------------------------------------------------------------
@@ -175,10 +181,10 @@ public class OrderE2ETest {
     @Order(6)
     public void changeOrderStatus() {
         // Меняем статус заказа на подтвержденный
-        given().
-            when().put(
-                    "/salesOrders/changeStatus?orderID=" + orderID +
-                            "&status=" + STATUS_CONFIRMED).
+        given()
+                .contentType("application/json")
+                .body("{\"orderID\":" + orderID + ",\"status\":" + STATUS_CONFIRMED + "}").
+            when().put("/salesOrders/changeStatus").
             then()
                 .assertThat()
                 .statusCode(200)
@@ -249,28 +255,28 @@ public class OrderE2ETest {
         LOG.info("Retrieving orderID=" + myOrderID);
 
         // получить список позиций требующих исполнения
-        List<LinkedHashMap<String, Object>> entriesList =
+        List<LinkedHashMap<String, Object>> itemsList =
             given()
             .when()
-                .get("/salesOrders/getOrderEntries?orderID=" + myOrderID)
+                .get("/salesOrders/getOrderItems?orderID=" + myOrderID)
             .then()
                 .statusCode(200)
             .extract().jsonPath().getList("$");
-        LOG.info("OrderID=" + myOrderID + " has " + entriesList.size() + " items");
+        LOG.info("OrderID=" + myOrderID + " has " + itemsList.size() + " items");
 
-        int entryID, entryProductID, quantity;
+        int itemID, itemProductID, quantity;
         float price;
 
         // осуществить отгрузки позиций
-        for (LinkedHashMap<String, Object> entry:entriesList) {
+        for (LinkedHashMap<String, Object> item:itemsList) {
 
-            entryID = (Integer) entry.get("entryID");
-            entryProductID = (Integer) entry.get("productID");
-            quantity = (Integer) entry.get("quantity");
-            price = (Float) entry.get("price");
+            itemID = (Integer) item.get("itemID");
+            itemProductID = (Integer) item.get("productID");
+            quantity = (Integer) item.get("quantity");
+            price = (Float) item.get("price");
 
-            LOG.info("EntryID=" + entryID +
-                     " productID=" + entryProductID +
+            LOG.info("ItemID=" + itemID +
+                     " productID=" + itemProductID +
                      " quantity=" + quantity +
                      " price=" + price);
 
@@ -278,22 +284,22 @@ public class OrderE2ETest {
                     given()
                     .when()
                         .get("/inventory/sale?orderID=" + orderID +
-                                        "&productID=" + entryProductID +
+                                        "&productID=" + itemProductID +
                                         "&quantity=" + quantity)
                     .then()
                         .assertThat()
                         .statusCode(200)
-                        .body("productID", equalTo(entryProductID))
+                        .body("productID", equalTo(itemProductID))
                         .body("quantity", equalTo(quantity))
                     .extract().asString();
             LOG.info("Inventory transaction:\n" + makePretty(response));
 
             // удостовериться в исполнении заказа
-            if (entriesList.size() > 0) {
+            if (itemsList.size() > 0) {
                 response =
                 given()
                 .when()
-                    .get("/inventory/getStockCard?productID=" + entryProductID)
+                    .get("/inventory/getStockCard?productID=" + itemProductID)
                 .then()
                     .assertThat()
                     .statusCode(200)
@@ -313,9 +319,11 @@ public class OrderE2ETest {
     public void cleanup() {
 
         // Изменить статус заказа на удаляемый
-        given().
+        given()
+            .contentType("application/json")
+            .body("{\"orderID\":" + orderID + ",\"status\":" + STATUS_NEW + "}").
         when()
-            .put("/salesOrders/changeStatus?orderID=" + orderID + "&status=" + STATUS_NEW).
+            .put("/salesOrders/changeStatus").
         then()
             .assertThat()
             .statusCode(200)
@@ -354,6 +362,23 @@ public class OrderE2ETest {
                             .extract().asString();
             LOG.info(makePretty(response));
         }
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    @Test
+    @Order(10)
+    public void getProductTransactions() {
+        String response =
+                given()
+                        .when()
+                        .get("/inventory/getProductTransactions?" +
+                                "productID=" + productID /*+
+                                "&quantity=" + quantity*/)
+                        .then()
+                        .assertThat()
+                        .statusCode(200)
+                        .extract().asString();
+        LOG.info("Inventory get product transactions:\n" + makePretty(response));
     }
 
     //--------------------------------------------------------------------------------------------------
