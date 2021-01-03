@@ -6,6 +6,8 @@ import com.axiom.hermes.model.catalogue.entities.Collection;
 import com.axiom.hermes.model.catalogue.entities.CollectionItem;
 import com.axiom.hermes.model.catalogue.entities.Product;
 import com.axiom.hermes.model.catalogue.entities.ProductImage;
+import com.axiom.hermes.model.customers.entities.SalesOrder;
+import com.axiom.hermes.model.customers.entities.SalesOrderItem;
 import com.axiom.hermes.model.inventory.Inventory;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -44,7 +46,7 @@ public class Catalogue {
      */
     @Transactional
     public List<Product> getAvailableProducts() throws HermesException {
-        List<Product> availableProducts;
+        List<Product> availableProducts; // todo возвращать ID
         String query = "SELECT a FROM Product a WHERE a.available=TRUE";
         try {
             availableProducts = entityManager.createQuery(query, Product.class).getResultList();
@@ -62,9 +64,8 @@ public class Catalogue {
      */
     @Transactional
     public List<Product> getAllProducts() throws HermesException {
-        List<Product> allProducts;
+        List<Product> allProducts;  // todo возвращать ID
         String query = "SELECT a FROM Product a";
-        // todo try catch
         try {
             allProducts = entityManager.createQuery(query, Product.class).getResultList();
         } catch (RuntimeException e) {
@@ -100,7 +101,7 @@ public class Catalogue {
      */
     @Transactional
     public Product addProduct(Product product) throws HermesException {
-        if (product.productID != 0) {
+        if (product.getProductID() != 0) {
             throw new HermesException(
                     BAD_REQUEST, "Invalid parameter",
                     "ProductID is not zero. Do not specify productID when creating new Product.");
@@ -113,7 +114,7 @@ public class Catalogue {
         product.setTimestamp(System.currentTimeMillis());
         try {
             entityManager.persist(product);
-            inventory.createStockCard(product.productID);
+            inventory.createStockCard(product.getProductID());
         } catch (Exception exception) {
             try {
                 transactionManager.setRollbackOnly();
@@ -136,8 +137,7 @@ public class Catalogue {
         Validator.nonNegativeInteger("productID", product.getProductID());
         Validator.nonNegativeNumber("unitPrice", product.getUnitPrice());
 
-        Product managedEntity = getProduct(product.productID);
-        if (managedEntity==null) return null;
+        Product managedEntity = getProduct(product.getProductID());
 
         // Применять только те значения, которые были указаны (чтобы не затереть имеющиеся)
         if (product.getVendorCode()!=null) {
@@ -154,8 +154,13 @@ public class Catalogue {
         managedEntity.setUnitPrice(product.getUnitPrice());
         managedEntity.setAvailable(product.isAvailable());
         managedEntity.setTimestamp(System.currentTimeMillis());
-        entityManager.persist(managedEntity);
 
+        try {
+            entityManager.persist(managedEntity);
+        } catch (Exception exception) {
+            exception.printStackTrace();
+            throw new HermesException(INTERNAL_SERVER_ERROR, "Internal Server Error", exception.getMessage());
+        }
         return product;
     }
 
@@ -175,7 +180,13 @@ public class Catalogue {
                 "(SELECT COUNT(*) FROM SalesOrderItem WHERE SalesOrderItem.productID=" + productID + ") +" +
                 "(SELECT COUNT(*) FROM StockTransaction WHERE StockTransaction.productID=" + productID + ")";
 
-        long usageCount = Validator.asLong(entityManager.createNativeQuery(sqlQuery).getSingleResult());
+        long usageCount;
+        try {
+            usageCount = Validator.asLong(entityManager.createNativeQuery(sqlQuery).getSingleResult());
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new HermesException(INTERNAL_SERVER_ERROR, "Internal Server Error", e.getMessage());
+        }
 
         // Если продукт используется в заказах или транзакциях - удалять нельзя
         if (usageCount > 0) {
@@ -187,6 +198,7 @@ public class Catalogue {
         try {
             entityManager.createQuery("DELETE FROM ProductImage a WHERE a.productID=" + productID).executeUpdate();
             entityManager.createQuery("DELETE FROM StockCard a WHERE a.productID=" + productID).executeUpdate();
+            entityManager.createQuery("DELETE FROM CollectionItem a WHERE a.productID=" + productID).executeUpdate();
             entityManager.remove(product);
         } catch (Exception exception) {
             try {
@@ -208,8 +220,8 @@ public class Catalogue {
         Validator.nonNegativeInteger("productID", productImage.getProductID());
 
         // Проверяем есть ли такая товарная позиция в каталоге
-        Product product = getProduct(productImage.productID);
-        ProductImage managedEntity = entityManager.find(ProductImage.class, product.productID);
+        Product product = getProduct(productImage.getProductID());
+        ProductImage managedEntity = entityManager.find(ProductImage.class, product.getProductID());
         if (managedEntity==null) {
             // Если у товарной позиции небыло изображения - добавляем
             entityManager.persist(productImage);
@@ -262,39 +274,258 @@ public class Catalogue {
     }
 
     //--------------------------------------------------------------------------------------------------------
-    // Управление коллекциями // TODO Добавить управление коллекциями
+    // Управление коллекциями
     //--------------------------------------------------------------------------------------------------------
 
-    public List<Collection> getCollections() {
-        return null;
+    /**
+     * Возвращает список всех коллекций
+     * @return список всех коллекций
+     * @throws HermesException информация об ошибке
+     */
+    @Transactional
+    public List<Collection> getCollections() throws HermesException {
+        List<Collection> allCollections;
+        String query = "SELECT a FROM Collection a";
+        try { // TODO возвращать список ID
+            allCollections = entityManager.createQuery(query, Collection.class).getResultList();
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            throw new HermesException(INTERNAL_SERVER_ERROR, "Internal Server Error", e.getMessage());
+        }
+        return allCollections;
     }
 
-    public Collection addCollection(Collection collection) {
-        return null;
+    /**
+     * Получить карточку коллекции товаров
+     * @param collectionID коллекции
+     * @return карточка коллекции
+     * @throws HermesException информация об ошибке
+     */
+    @Transactional
+    public Collection getCollection(long collectionID) throws HermesException {
+        Validator.nonNegativeInteger("collectionID", collectionID);
+        Collection collection = entityManager.find(Collection.class, collectionID);
+        if (collection==null) {
+            throw new HermesException(
+                    NOT_FOUND, "Collection not found",
+                    "Requested collectionID=" + collectionID + " not found.");
+        }
+        return collection;
     }
 
-    public Collection updateCollection(Collection collection) {
-        return null;
+    /**
+     * Добавляет новую карточку коллекцию
+     * @param collection карточка коллекции
+     * @return сохраненная карточка коллекции
+     * @throws HermesException информация об ошибке
+     */
+    @Transactional
+    public Collection addCollection(Collection collection) throws HermesException {
+        if (collection.getCollectionID() != 0) {
+            throw new HermesException(
+                    BAD_REQUEST, "Invalid parameter",
+                    "CollectionID is not zero. Do not specify collectionID when creating new Collection.");
+        }
+
+        Validator.validateName(collection.getName());
+
+        try {
+            entityManager.persist(collection);
+        } catch (Exception exception) {
+            exception.printStackTrace();
+            throw new HermesException(INTERNAL_SERVER_ERROR, "Internal Server Error", exception.getMessage());
+        }
+        return collection;
     }
 
-    public void removeCollection(long collectionID) {
+    /**
+     * Обновляет карточку коллекции
+     * @param collection измененная карточка коллекции
+     * @return обновленная карточка коллекции
+     * @throws HermesException информация об ошибке
+     */
+    @Transactional
+    public Collection updateCollection(Collection collection) throws HermesException {
+        Validator.nonNegativeInteger("collectionID", collection.getCollectionID());
+        Validator.validateName(collection.getName());
+
+        Collection managedEntity = getCollection(collection.getCollectionID());
+
+        managedEntity.setName(collection.getName());
+        managedEntity.setDescription(collection.getDescription());
+        managedEntity.setThumbnail(collection.getThumbnail());
+        managedEntity.setSortOrder(collection.getSortOrder());
+        managedEntity.setAvailable(collection.isAvailable());
+        managedEntity.setTimestamp(System.currentTimeMillis());
+
+        try {
+            entityManager.persist(managedEntity);
+        } catch (Exception exception) {
+            exception.printStackTrace();
+            throw new HermesException(INTERNAL_SERVER_ERROR, "Internal Server Error", exception.getMessage());
+        }
+
+        return managedEntity;
+    }
+
+    /**
+     * Удаляет коллекцию товаров: карточку и ссылки на товары
+     * @param collectionID коллекции
+     * @throws HermesException информация об ошибке
+     */
+    @Transactional
+    public void removeCollection(long collectionID) throws HermesException {
+        Validator.nonNegativeInteger("collectionID", collectionID);
+
+        Collection managedEntity = getCollection(collectionID);
+
+        try {
+            entityManager.createQuery("DELETE FROM CollectionItem a WHERE a.collectionID=" + collectionID).executeUpdate();
+            entityManager.remove(managedEntity);
+        } catch (Exception exception) {
+            try {
+                transactionManager.setRollbackOnly();
+            } catch (IllegalStateException | SystemException e) {
+                e.printStackTrace();
+            }
+            throw exception;
+        }
 
     }
 
-    public List<CollectionItem> getCollectionItems() {
-        return null;
+    /**
+     * Получить список всех товаров в коллекции
+     * @param collectionID коллекции
+     * @return список товаров коллекции
+     * @throws HermesException информация об ошибке
+     */
+    @Transactional
+    public List<CollectionItem> getCollectionItems(long collectionID) throws HermesException {
+        Validator.nonNegativeInteger("collectionID", collectionID);
+        List<CollectionItem> collectionItems;
+        String query = "SELECT a FROM CollectionItem a WHERE a.collectionID=" + collectionID;
+        try {
+            collectionItems = entityManager.createQuery(query, CollectionItem.class).getResultList();
+        } catch (Exception exception) {
+            exception.printStackTrace();
+            throw new HermesException(INTERNAL_SERVER_ERROR, "Internal Server Error", exception.getMessage());
+        }
+        return collectionItems;
     }
 
-    public CollectionItem addCollectionItem() {
-        return null;
+    /**
+     * Добавляет товарную позицию в коллекцию
+     * @param item товарная позиция коллекции
+     * @return добавленная товарная позиция в коллекции
+     * @throws HermesException информация об ошибке
+     */
+    @Transactional
+    public CollectionItem addCollectionItem(CollectionItem item) throws HermesException {
+        Validator.nonNegativeInteger("collectionID", item.getCollectionID());
+        Validator.nonNegativeInteger("productID", item.getProductID());
+
+        // Проверяем наличие такой коллекции и такого товара
+        Collection collection = getCollection(item.getCollectionID());
+        Product product = getProduct(item.getProductID());
+
+        // Проверяем нет ли уже в коллекции такого товара
+        long occurences;
+        try {
+            String sqlQuery = "SELECT COUNT(*) FROM CollectionItem " +
+                    "WHERE CollectionItem.collectionID=" + collection.getCollectionID() + " AND " +
+                    "CollectionItem.productID=" + product.getProductID();
+            occurences = Validator.asLong(entityManager.createNativeQuery(sqlQuery).getSingleResult());
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new HermesException(INTERNAL_SERVER_ERROR, "Internal Server Error", e.getMessage());
+        }
+
+        // Если есть - уходим и указываем на ошибку
+        if (occurences > 0) {
+            throw new HermesException(FORBIDDEN, "Collection item already exist",
+                    "Can't create collection item because it already exist: " +
+                    "collectionID=" + collection.getCollectionID() + ", " +
+                    "productID=" + product.getProductID() + ".");
+        }
+
+        // Если всё нормально - сохраняем
+        try {
+            entityManager.persist(item);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new HermesException(INTERNAL_SERVER_ERROR, "Internal Server Error", e.getMessage());
+        }
+
+        return item;
     }
 
-    public CollectionItem updateCollectionItem() {
-        return null;
+    /**
+     * Обновляет товарную позицию в коллекции
+     * @param item обовленная товарная позиция коллекции
+     * @return сохраненная товарная позиация коллекции
+     * @throws HermesException информация об ошибке
+     */
+    @Transactional
+    public CollectionItem updateCollectionItem(CollectionItem item) throws HermesException {
+        Validator.nonNegativeInteger("collectionID", item.getCollectionID());
+        Validator.nonNegativeInteger("productID", item.getProductID());
+
+        // Проверяем есть ли такая позиция в коллекции
+        CollectionItem managedItem = entityManager.find(CollectionItem.class, item.getItemID());
+        if (managedItem==null) {
+            throw new HermesException(NOT_FOUND, "Collection item not found",
+                    "Collection itemID=" + item.getItemID() + " not found.");
+        }
+
+        // Проверяем наличие указанной коллекции и товара
+        Collection collection = getCollection(item.getCollectionID());
+        Product product = getProduct(item.getProductID());
+
+        // Присваиваем проверенные значения
+        managedItem.setCollectionID(collection.getCollectionID());
+        managedItem.setProductID(product.getProductID());
+        managedItem.setOrderNumber(item.getOrderNumber());
+
+        // Если всё нормально - сохраняем
+        try {
+            entityManager.persist(item);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new HermesException(INTERNAL_SERVER_ERROR, "Internal Server Error", e.getMessage());
+        }
+
+        return item;
     }
 
-    public void removeCollectionItem(long collectionItemID) {
+    /**
+     * Удаляет товарную позицию коллекции
+     * @param collectionItemID коллекции
+     * @throws HermesException информация об ошибке
+     */
+    public void removeCollectionItem(long collectionItemID) throws HermesException {
+        Validator.nonNegativeInteger("collectionItemID", collectionItemID);
 
+        CollectionItem managedItem = entityManager.find(CollectionItem.class, collectionItemID);
+        if (managedItem == null)
+            throw new HermesException(NOT_FOUND, "Collection item not found",
+                    "Cannot remove collection item: itemID=" + collectionItemID + ".");
+
+        Collection collection = getCollection(managedItem.getCollectionID());
+
+        try {
+            // Удаляем позицию коллекции
+            entityManager.remove(managedItem);
+            // Обновить временную метку последнего изменения коллекции
+            collection.setTimestamp(System.currentTimeMillis());
+            entityManager.persist(collection);
+        } catch (Exception exception) {
+            try {
+                transactionManager.setRollbackOnly();
+            } catch (IllegalStateException | SystemException e) {
+                e.printStackTrace();
+            }
+            throw exception;
+        }
     }
 
 }

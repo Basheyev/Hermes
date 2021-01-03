@@ -26,6 +26,14 @@ public class CollectionItem {
         this.productID = productID;
     }
 
+    public long getItemID() {
+        return itemID;
+    }
+
+    public void setItemID(long itemID) {
+        this.itemID = itemID;
+    }
+
     public long getCollectionID() {
         return collectionID;
     }
@@ -40,5 +48,13 @@ public class CollectionItem {
 
     public void setProductID(long productID) {
         this.productID = productID;
+    }
+
+    public int getOrderNumber() {
+        return orderNumber;
+    }
+
+    public void setOrderNumber(int orderNumber) {
+        this.orderNumber = orderNumber;
     }
 }
