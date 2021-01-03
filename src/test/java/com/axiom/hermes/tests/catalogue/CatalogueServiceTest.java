@@ -28,7 +28,10 @@ public class CatalogueServiceTest {
     public static final String changedFileName = "bag.jpg";
     public static final String bigFileName = "bigimage1.jfif";
 
+    // todo long
     private static int productID;
+    private static int collectionID;
+    private static int collectionItemID;
     private static long imageSize;
 
     //---------------------------------------------------------------------------------------------------
@@ -155,7 +158,7 @@ public class CatalogueServiceTest {
                 .body(containsString("\"available\":true"))         // Содержит доступные товары
                 .body(not(containsString("\"available\":false")))   // Не содержит недоступные товары
                 .statusCode(200).extract().asString();
-        LOG.info("Get Available Product response :" + body);
+        LOG.info("Get Available Product response :" + makePretty(body));
     }
 
     //---------------------------------------------------------------------------------------------------
@@ -222,7 +225,6 @@ public class CatalogueServiceTest {
         LOG.info("Upload big image:\n" + response);
     }
 
-    //---------------------------------------------------------------------------------------------------
 
     @Test
     @Order(9)
@@ -251,7 +253,6 @@ public class CatalogueServiceTest {
         }
     }
 
-    //---------------------------------------------------------------------------------------------------
 
     @Test
     @Order(10)
@@ -284,7 +285,95 @@ public class CatalogueServiceTest {
     //---------------------------------------------------------------------------------------------------
 
     @Test
-    @Order(10)
+    @Order(11)
+    public void addCollection() {
+        String str = "{\n" +
+                "    \"name\": \"Swags\",\n" +
+                "    \"description\": \"All my swags\",\n" +
+                "    \"available\": true\n" +
+                "}";
+        collectionID =
+                given()
+                        .header("Content-Type", "application/json")
+                        .body(str)
+                .when()
+                        .post("/catalogue/addCollection")
+                .then()
+                        .statusCode(200)
+                        .assertThat()
+                        .body("name", equalTo("Swags"))
+                        .body("description", equalTo("All my swags"))
+                        .body("available", equalTo(true))
+                .extract().path("collectionID");
+
+        LOG.info("Collection created collectionID=" + collectionID);
+    }
+
+    @Test
+    @Order(12)
+    public void addCollectionItem() {
+        String str = "{\n" +
+                "    \"collectionID\":" + collectionID + ",\n" +
+                "    \"productID\":" + productID + "\n" +
+                "}";
+        collectionItemID =
+                given()
+                        .header("Content-Type", "application/json")
+                        .body(str)
+                .when()
+                        .post("/catalogue/addCollectionItem")
+                .then()
+                        .statusCode(200)
+                        .assertThat()
+                        .body("collectionID", equalTo(collectionID))
+                        .body("productID", equalTo(productID))
+                .extract().path("itemID");
+
+        LOG.info("Collection item created itemID=" + collectionItemID);
+    }
+
+
+    @Test
+    @Order(13)
+    public void getCollectionItems() {
+        String response =
+                given().
+                        when().get("/catalogue/getCollectionItems?collectionID=" + collectionID).
+                        then().statusCode(200).assertThat()
+                        .body("collectionID", hasItem(collectionID))
+                        .body("productID", hasItem(productID))
+                        .extract().asString();
+        LOG.info("Get collection items: " + makePretty(response));
+    }
+
+    //---------------------------------------------------------------------------------------------------
+
+    @Test
+    @Order(14)
+    public void removeCollectionItem() {
+        String response = given().
+                when().delete("/catalogue/removeCollectionItem?itemID=" + collectionItemID).
+                then().assertThat().statusCode(200).extract().asString();
+
+        LOG.info("Collection item deleted, response:\n" + makePretty(response));
+    }
+
+    //---------------------------------------------------------------------------------------------------
+
+    @Test
+    @Order(15)
+    public void removeCollection() {
+        String response = given().
+                when().delete("/catalogue/removeCollection?collectionID=" + collectionID).
+                then().assertThat().statusCode(200).extract().asString();
+
+        LOG.info("Collection deleted, response:\n" + makePretty(response));
+    }
+
+    //---------------------------------------------------------------------------------------------------
+
+    @Test
+    @Order(16)
     public void removeProduct() {
 
         given().
@@ -297,6 +386,17 @@ public class CatalogueServiceTest {
                 then().assertThat().statusCode(404).extract().asString();
 
         LOG.info("Product deleted ProductID=" + productID + " check response:\n" + response);
+    }
+
+    //--------------------------------------------------------------------------------------------------
+    private String makePretty(String response) {
+        StringBuffer sb = new StringBuffer(response);
+        for (int i=0; i<sb.length(); i++) {
+            if (sb.charAt(i)==',') {
+                sb.insert(i+1, '\n');
+            }
+        }
+        return sb.toString();
     }
 
 }

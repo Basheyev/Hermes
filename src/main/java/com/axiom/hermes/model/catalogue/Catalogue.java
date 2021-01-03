@@ -330,6 +330,7 @@ public class Catalogue {
         Validator.validateName(collection.getName());
 
         try {
+            collection.setTimestamp(System.currentTimeMillis());
             entityManager.persist(collection);
         } catch (Exception exception) {
             exception.printStackTrace();
@@ -451,9 +452,16 @@ public class Catalogue {
         // Если всё нормально - сохраняем
         try {
             entityManager.persist(item);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new HermesException(INTERNAL_SERVER_ERROR, "Internal Server Error", e.getMessage());
+            collection.setTimestamp(System.currentTimeMillis());
+            entityManager.persist(collection);
+        } catch (Exception exception) {
+            try {
+                transactionManager.setRollbackOnly();
+            } catch (IllegalStateException | SystemException e) {
+                e.printStackTrace();
+                throw new HermesException(INTERNAL_SERVER_ERROR, "Internal Server Error", e.getMessage());
+            }
+            throw exception;
         }
 
         return item;
@@ -489,9 +497,16 @@ public class Catalogue {
         // Если всё нормально - сохраняем
         try {
             entityManager.persist(item);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new HermesException(INTERNAL_SERVER_ERROR, "Internal Server Error", e.getMessage());
+            collection.setTimestamp(System.currentTimeMillis());
+            entityManager.persist(collection);
+        } catch (Exception exception) {
+            try {
+                transactionManager.setRollbackOnly();
+            } catch (IllegalStateException | SystemException e) {
+                e.printStackTrace();
+                throw new HermesException(INTERNAL_SERVER_ERROR, "Internal Server Error", e.getMessage());
+            }
+            throw exception;
         }
 
         return item;
@@ -502,6 +517,7 @@ public class Catalogue {
      * @param collectionItemID коллекции
      * @throws HermesException информация об ошибке
      */
+    @Transactional
     public void removeCollectionItem(long collectionItemID) throws HermesException {
         Validator.nonNegativeInteger("collectionItemID", collectionItemID);
 

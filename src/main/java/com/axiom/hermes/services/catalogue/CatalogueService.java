@@ -1,7 +1,10 @@
 package com.axiom.hermes.services.catalogue;
 
 import com.axiom.hermes.common.exceptions.HermesException;
+import com.axiom.hermes.common.validation.Validator;
 import com.axiom.hermes.model.catalogue.Catalogue;
+import com.axiom.hermes.model.catalogue.entities.Collection;
+import com.axiom.hermes.model.catalogue.entities.CollectionItem;
 import com.axiom.hermes.model.catalogue.entities.Product;
 import com.axiom.hermes.model.catalogue.entities.ProductImage;
 import net.coobird.thumbnailator.Thumbnails;
@@ -11,6 +14,8 @@ import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 
 import javax.inject.Inject;
+import javax.transaction.SystemException;
+import javax.transaction.Transactional;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -231,18 +236,119 @@ public class CatalogueService {
     // Управление коллекциями
     //--------------------------------------------------------------------------------------------------
 
-    // TODO Добавить управление коллекциями
+    /**
+     * Возвращает список всех коллекций
+     * @return список всех коллекций
+     * @throws HermesException информация об ошибке
+     */
+    @GET
+    @Path("/getCollections")
+    public Response getCollections() throws HermesException {
+        List<Collection> collections = catalogue.getCollections();
+        return Response.ok().entity(collections).build();
+    }
 
+    /**
+     * Получить карточку коллекции товаров
+     * @param collectionID коллекции
+     * @return карточка коллекции
+     * @throws HermesException информация об ошибке
+     */
+    @GET
+    @Path("/getCollection")
+    public Response getCollection(@QueryParam("collectionID") long collectionID) throws HermesException {
+        Collection collection = catalogue.getCollection(collectionID);
+        return Response.ok().entity(collection).build();
+    }
 
+    /**
+     * Добавляет новую карточку коллекцию
+     * @param collection карточка коллекции
+     * @return сохраненная карточка коллекции
+     * @throws HermesException информация об ошибке
+     */
+    @POST
+    @Path("/addCollection")
+    public Response addCollection(Collection collection) throws HermesException {
+        Collection managed = catalogue.addCollection(collection);
+        return Response.ok().entity(managed).build();
+    }
 
+    /**
+     * Обновляет карточку коллекции
+     * @param collection измененная карточка коллекции
+     * @return обновленная карточка коллекции
+     * @throws HermesException информация об ошибке
+     */
+    @PUT
+    @Path("/updateCollection")
+    public Response updateCollection(Collection collection) throws HermesException {
+        Collection managed = catalogue.updateCollection(collection);
+        return Response.ok().entity(managed).build();
+    }
 
+    /**
+     * Удаляет коллекцию товаров: карточку и ссылки на товары
+     * @param collectionID коллекции
+     * @throws HermesException информация об ошибке
+     */
+    @DELETE
+    @Path("/removeCollection")
+    public Response removeCollection(@QueryParam("collectionID") long collectionID) throws HermesException {
+        catalogue.removeCollection(collectionID);
+        return Response.ok().build();
+    }
 
+    /**
+     * Получить список всех товаров в коллекции
+     * @param collectionID коллекции
+     * @return список товаров коллекции
+     * @throws HermesException информация об ошибке
+     */
+    @GET
+    @Path("/getCollectionItems")
+    public Response getCollectionItems(@QueryParam("collectionID") long collectionID) throws HermesException {
+        List<CollectionItem> collectionItems = catalogue.getCollectionItems(collectionID);
+        return Response.ok().entity(collectionItems).build();
+    }
 
+    /**
+     * Добавляет товарную позицию в коллекцию
+     * @param item товарная позиция коллекции
+     * @return добавленная товарная позиция в коллекции
+     * @throws HermesException информация об ошибке
+     */
+    @POST
+    @Path("/addCollectionItem")
+    public Response addCollectionItem(CollectionItem item) throws HermesException {
+        CollectionItem managed = catalogue.addCollectionItem(item);
+        return Response.ok().entity(managed).build();
+    }
 
+    /**
+     * Обновляет товарную позицию в коллекции
+     * @param item обовленная товарная позиция коллекции
+     * @return сохраненная товарная позиация коллекции
+     * @throws HermesException информация об ошибке
+     */
+    @PUT
+    @Path("/updateCollectionItem")
+    public Response updateCollectionItem(CollectionItem item) throws HermesException {
+        CollectionItem managed = catalogue.updateCollectionItem(item);
+        return Response.ok().entity(managed).build();
+    }
 
-
-
-
+    /**
+     * Удаляет товарную позицию коллекции
+     * @param collectionItemID коллекции
+     * @throws HermesException информация об ошибке
+     */
+    @DELETE
+    @Path("/removeCollectionItem")
+    public Response removeCollectionItem(@QueryParam("itemID") long collectionItemID) throws HermesException {
+        catalogue.removeCollectionItem(collectionItemID);
+        return Response.ok().build();
+    }
 
     //----------------------------------------------------------------------------------------------------
     // Парсинг частей формы и загрузка файла
