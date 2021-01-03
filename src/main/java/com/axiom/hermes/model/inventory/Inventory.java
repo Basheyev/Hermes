@@ -192,7 +192,7 @@ public class Inventory {
     @Transactional
     public List<StockCard> getAllStocks() throws HermesException {
         List<StockCard> allStocks;
-        String query = "SELECT a FROM StockCard a";
+        String query = "SELECT a FROM StockCard a"; // todo переделать получение списка на список ID
         try {
             allStocks = entityManager.createQuery(query, StockCard.class).getResultList();
         } catch (RuntimeException exception) {

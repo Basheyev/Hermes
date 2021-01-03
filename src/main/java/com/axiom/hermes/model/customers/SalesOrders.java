@@ -23,7 +23,7 @@ import java.util.List;
 import static com.axiom.hermes.common.exceptions.HermesException.*;
 
 /**
- * Управление клиентскими заказами
+ * Управление клиентскими заказами todo переделать возврат список в виде ID
  */
 @ApplicationScoped
 public class SalesOrders {
@@ -205,7 +205,12 @@ public class SalesOrders {
         Validator.nonNegativeInteger("orderID", orderID);
         List<SalesOrderItem> orderEntries;
         String query = "SELECT a FROM SalesOrderItem a WHERE a.orderID=" + orderID;
-        orderEntries = entityManager.createQuery(query, SalesOrderItem.class).getResultList();
+        try {
+            orderEntries = entityManager.createQuery(query, SalesOrderItem.class).getResultList();
+        } catch (Exception exception) {
+            exception.printStackTrace();
+            throw new HermesException(INTERNAL_SERVER_ERROR, "Internal Server Error", exception.getMessage());
+        }
         return orderEntries;
     }
 

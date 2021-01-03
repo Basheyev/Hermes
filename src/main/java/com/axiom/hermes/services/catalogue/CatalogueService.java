@@ -211,13 +211,13 @@ public class CatalogueService {
         //------------------------------------------------------------------------------------
         // Создаем объект ProductImage и сохраняем его в базе данных
         //------------------------------------------------------------------------------------
-        ProductImage productImage = new ProductImage(product.productID, filename, originalImage, thumbnail);
+        ProductImage productImage = new ProductImage(product.getProductID(), filename, originalImage, thumbnail);
         catalogue.uploadImage(productImage);
 
         // Отправляем ответ клиентом с мини отчётом о загруженном изображении
         String response =
                 "{\n"+
-                "    \"productID\": " + product.productID + ",\n" +
+                "    \"productID\": " + product.getProductID() + ",\n" +
                 "    \"filename\": \"" + filename + "\",\n" +
                 "    \"imageSize\": " + originalImage.length + ",\n" +
                 "    \"thumbnailSize\": " + thumbnail.length + "\n" +
@@ -325,5 +325,10 @@ public class CatalogueService {
         return thumbnail;
     }
 
+    //--------------------------------------------------------------------------------------------------
+    // Управление коллекциями
+    //--------------------------------------------------------------------------------------------------
+
+    // TODO Добавить управление коллекциями
 
 }
