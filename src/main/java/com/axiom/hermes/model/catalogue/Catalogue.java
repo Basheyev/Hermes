@@ -46,7 +46,7 @@ public class Catalogue {
      */
     @Transactional
     public List<Product> getAvailableProducts() throws HermesException {
-        List<Product> availableProducts; // todo возвращать ID
+        List<Product> availableProducts;
         String query = "SELECT a FROM Product a WHERE a.available=TRUE";
         try {
             availableProducts = entityManager.createQuery(query, Product.class).getResultList();
@@ -64,7 +64,7 @@ public class Catalogue {
      */
     @Transactional
     public List<Product> getAllProducts() throws HermesException {
-        List<Product> allProducts;  // todo возвращать ID
+        List<Product> allProducts;
         String query = "SELECT a FROM Product a";
         try {
             allProducts = entityManager.createQuery(query, Product.class).getResultList();
@@ -286,7 +286,7 @@ public class Catalogue {
     public List<Collection> getCollections() throws HermesException {
         List<Collection> allCollections;
         String query = "SELECT a FROM Collection a";
-        try { // TODO возвращать список ID
+        try {
             allCollections = entityManager.createQuery(query, Collection.class).getResultList();
         } catch (RuntimeException e) {
             e.printStackTrace();

@@ -23,7 +23,7 @@ import java.util.List;
 import static com.axiom.hermes.common.exceptions.HermesException.*;
 
 /**
- * Управление клиентскими заказами todo переделать возврат список в виде ID
+ * Управление клиентскими заказами
  */
 @ApplicationScoped
 public class SalesOrders {
